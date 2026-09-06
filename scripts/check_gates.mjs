@@ -14,11 +14,15 @@ if (gateLines.length === 0) {
   process.exit(1);
 }
 
+// 走査対象はテストだけではない —— 実ブラウザ検品(scripts/browser_check.mjs)も
+// ゲートを確かめる検査である。片方しか見ないと、そこで守られているゲートを孤児と誤判定する
 const testDir = join(root, "tests");
-const testText = readdirSync(testDir)
-  .filter((f) => f.endsWith(".ts"))
-  .map((f) => readFileSync(join(testDir, f), "utf8"))
-  .join("\n");
+const testText = [
+  ...readdirSync(testDir)
+    .filter((f) => f.endsWith(".ts"))
+    .map((f) => readFileSync(join(testDir, f), "utf8")),
+  readFileSync(join(root, "scripts", "browser_check.mjs"), "utf8"),
+].join("\n");
 
 let bad = 0;
 for (const line of gateLines) {

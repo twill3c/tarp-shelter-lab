@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TARP &amp; SHELTER LAB — タープ設営シミュレーター</title>
+    <meta name="description" content="米軍サバイバル・マニュアル(FM 3-05.70、旧 FM 21-76)のシェルター設営を、ブラウザの中でドラッグして張ってみる教材アプリ。" />
+    <link rel="stylesheet" href="./styles/style.css" />
+  </head>
+  <body>
+    <header class="masthead">
+      <h1>TARP &amp; SHELTER LAB</h1>
+      <p class="lede">米軍サバイバル・マニュアルから学ぶシェルター設営 — 見る・動かす・張る・試す</p>
+    </header>
+
+    <main class="layout">
+      <aside class="panel shelters">
+        <h2>SHELTERS</h2>
+        <ul id="shelter-list"></ul>
+        <section id="source" class="source">
+          <h3>ORIGINAL</h3>
+          <p class="src-title" data-field="title"></p>
+          <p class="src-edition" data-field="edition"></p>
+          <p class="src-figure" data-field="figure"></p>
+          <p><a data-field="url" href="#" target="_blank" rel="noopener">出典(Wikimedia Commons)</a></p>
+          <p class="src-rights" data-field="rights"></p>
+          <p class="src-usage" data-field="usage"></p>
+        </section>
+      </aside>
+
+      <section class="panel simulator">
+        <div class="sim-head">
+          <h2 id="sim-title">SIMULATOR</h2>
+          <div id="status" class="status" aria-live="polite"></div>
+          <div id="timer" class="timer">00:00</div>
+        </div>
+        <div class="stage">
+          <svg id="field" viewBox="0 0 800 520" preserveAspectRatio="xMidYMid meet" aria-label="設営フィールド">
+            <defs>
+              <pattern id="grass" width="40" height="40" patternUnits="userSpaceOnUse">
+                <rect width="40" height="40" fill="#6b7d4a" />
+                <path d="M0 40 L40 0 M-10 10 L10 -10 M30 50 L50 30" stroke="#75895a" stroke-width="1" />
+              </pattern>
+              <linearGradient id="tarpShade" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0" stop-color="#c9a961" />
+                <stop offset="0.5" stop-color="#e2c27a" />
+                <stop offset="1" stop-color="#b8974f" />
+              </linearGradient>
+            </defs>
+            <rect id="ground" x="0" y="0" width="800" height="520" fill="url(#grass)" />
+            <g id="layer-targets"></g>
+            <g id="layer-tarp"></g>
+            <g id="layer-parts"></g>
+            <g id="layer-labels"></g>
+            <g id="layer-drag"></g>
+          </svg>
+          <div id="tray" class="tray" aria-label="材料トレイ">
+            <button type="button" data-part="pole" data-remaining="0" title="ポールをドラッグ">
+              <span class="icon icon-pole"></span><span class="label">POLE</span><span class="count"></span>
+            </button>
+            <button type="button" data-part="peg" data-remaining="0" title="ペグをドラッグ">
+              <span class="icon icon-peg"></span><span class="label">PEG</span><span class="count"></span>
+            </button>
+          </div>
+        </div>
+
+        <ol id="steps" class="steps"></ol>
+        <p id="instruction" class="instruction"></p>
+        <p id="feedback" class="feedback" aria-live="polite"></p>
+
+        <div id="controls" class="controls">
+          <div id="heights" class="heights"></div>
+          <div id="tensions" class="tensions"></div>
+          <div class="buttons">
+            <button type="button" id="btn-reset">RESET</button>
+            <button type="button" id="btn-hint">HINT</button>
+            <button type="button" id="btn-auto">AUTO</button>
+          </div>
+        </div>
+
+        <section id="score-panel" class="score-panel" hidden>
+          <h3>SCORE</h3>
+          <div class="score-grid">
+            <div><span class="k">SCORE</span><span class="v" data-field="score"></span></div>
+            <div><span class="k">RANK</span><span class="v rank" data-field="rank"></span></div>
+            <div><span class="k">TIME</span><span class="v" data-field="seconds"></span></div>
+            <div><span class="k">MISS</span><span class="v" data-field="mistakes"></span></div>
+            <div><span class="k">HINT</span><span class="v" data-field="hints"></span></div>
+            <div><span class="k">BEST</span><span class="v" data-field="best"></span></div>
+          </div>
+          <p class="score-note" data-field="note"></p>
+        </section>
+      </section>
+    </main>
+
+    <section class="panel notes" id="notes">
+      <h2>この張り方の要点</h2>
+      <ul id="notes-list"></ul>
+    </section>
+
+    <section class="panel doc" id="walk">
+      <h2>tarp-shelter-lab の歩き方</h2>
+      <ol>
+        <li>左の SHELTERS から張り方を選ぶ。最初は A-FRAME。</li>
+        <li>畳んであるタープをタップして広げる。</li>
+        <li>トレイの POLE を、点線の印へドラッグして立てる。全部立つとタープが持ち上がる。</li>
+        <li>PEG を点線の印へドラッグして打つ。印から 40 cm 以上外れると打ち直し(ミス +1)。</li>
+        <li>光っているタープの端(またはポールの先)から、ペグへ線を引いてロープを結ぶ。</li>
+        <li>たるんだロープは、ペグをつまんで外へ引く。15 cm 以内なら吸い付いて張り切る。</li>
+        <li>すべて張れると SHELTER COMPLETE。時間・ミス・ヒントからスコアとランクが出る。</li>
+        <li>HINT は次の目標を光らせる(スコア −40)。AUTO は正しい手順を再生する(スコアは記録しない)。</li>
+      </ol>
+    </section>
+
+    <section class="panel doc" id="design">
+      <h2>tarp-shelter-lab 設計図</h2>
+      <ul>
+        <li>座標は cm の平面図(真上から)。タープは 300 cm 角。張り終えた形の寸法は三平方の定理で導く(A 形: 高さ 120 で片側の接地幅 90)。</li>
+        <li>張力 = 100 − |目標長 − ロープ長| × 2(0〜100)。70 以上を「張れている」とし、短ければ「たるみ」、長ければ「届きません」。</li>
+        <li>完成の六条件: 展開・全ポール・全ペグ・全ロープが正しいペグ・全張力 ≥ 70・全ポール高さが範囲内。</li>
+        <li>スコア = 1000 − max(0, 秒 − 30) × 5 − ミス × 60 − ヒント × 40。S ≥ 900 / A ≥ 750 / B ≥ 550 / C ≥ 350 / D。</li>
+        <li>判定・張力・スコアは UI から独立した純関数で、単体テストが守る。画面の幾何と操作は実ブラウザで別に検品する。</li>
+        <li>原図は転載せず、FM 3-05.70(旧 FM 21-76)第 5 章の構成を自作 SVG に読み替えている。出典と権利は左の ORIGINAL 欄。</li>
+      </ul>
+      <p class="disclaimer">本アプリは教育・シミュレーション目的であり、実際の野外活動の安全性を保証しない。実際の設営では現地の天候・地形・地盤・用具の仕様・製造者の説明書・現地の規則・最新の安全情報を優先すること。</p>
+    </section>
+
+    <footer>
+      <p><a href="https://github.com/twill3c/tarp-shelter-lab/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a> © 2026 坂田哲朗
+        ・ <a href="https://github.com/twill3c/tarp-shelter-lab" target="_blank" rel="noopener">GitHub</a>
+        ・ <a href="#walk">tarp-shelter-lab の歩き方</a>
+        ・ <a href="#design">tarp-shelter-lab 設計図</a>
+        ・ <a href="https://app-menu-amber.vercel.app" target="_blank" rel="noopener">App Menu</a></p>
+    </footer>
+
+    <script type="module" src="./src/main.ts"></script>
+  </body>
+</html>

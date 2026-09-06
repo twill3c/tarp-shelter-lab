@@ -1,0 +1,258 @@
+// 実ブラウザ検品(TEST_SPEC B-01..B-10)。dist/ を静的配信して Playwright で測る。
+// 在存でなく幾何と到達を測る(HC-138)。失敗は終了コード 1。検品器にも陽性対照を置く(HC-080)。
+import { createServer } from "node:http";
+import { existsSync, mkdirSync, readFileSync, statSync } from "node:fs";
+import { extname, join, normalize } from "node:path";
+import { chromium } from "playwright";
+
+const root = new URL("..", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
+const dist = join(root, "dist");
+const shotDir = process.env["SHOT_DIR"] ?? join(root, "logs", "shots");
+mkdirSync(shotDir, { recursive: true });
+const shelters = JSON.parse(readFileSync(join(root, "data", "shelters.json"), "utf8")).shelters;
+
+const MIME = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".svg": "image/svg+xml" };
+
+function serve() {
+  return new Promise((resolve) => {
+    const srv = createServer((req, res) => {
+      let p = normalize(decodeURIComponent((req.url ?? "/").split("?")[0]));
+      if (p.endsWith("\\") || p.endsWith("/")) p += "index.html";
+      const file = join(dist, p);
+      if (!file.startsWith(dist) || !existsSync(file) || statSync(file).isDirectory()) {
+        res.writeHead(404);
+        res.end("not found");
+        return;
+      }
+      res.writeHead(200, { "content-type": MIME[extname(file)] ?? "application/octet-stream" });
+      res.end(readFileSync(file));
+    });
+    srv.listen(0, "127.0.0.1", () => resolve({ srv, base: `http://127.0.0.1:${srv.address().port}/` }));
+  });
+}
+
+// 各ケースが確かめる品質ゲート(SPEC §6)。check_gates.mjs がこの対応を数える(HC-157)
+const GATES = {
+  "B-01": "G-09",
+  "B-02": "N-03",
+  "B-03": "G-10",
+  "B-04": "G-10",
+  "B-04c": "G-10",
+  "B-05": "G-10",
+  "B-06": "G-11",
+  "B-07": "G-12",
+  "B-08": "F-09",
+  "B-09": "F-08",
+  "B-10": "F-12",
+};
+
+const results = [];
+function report(id, ok, detail) {
+  results.push({ id, ok, detail });
+  console.log(`${ok ? "PASS" : "FAIL"} ${id} [${GATES[id] ?? "-"}] ${detail}`);
+}
+
+async function center(page, selector) {
+  const el = page.locator(selector).first();
+  await el.scrollIntoViewIfNeeded();
+  const box = await el.boundingBox();
+  if (!box) throw new Error(`boundingBox が取れない: ${selector}`);
+  return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+}
+
+async function drag(page, from, to) {
+  await page.mouse.move(from.x, from.y);
+  await page.mouse.down();
+  await page.mouse.move((from.x + to.x) / 2, (from.y + to.y) / 2, { steps: 4 });
+  await page.mouse.move(to.x, to.y, { steps: 4 });
+  await page.mouse.up();
+}
+
+async function count(page, selector) {
+  return page.locator(selector).count();
+}
+
+/** SVG の全描画要素の bbox が viewBox に収まるか。はみ出した要素の一覧を返す */
+async function overflowing(page) {
+  return page.evaluate(() => {
+    const svg = document.querySelector("svg#field");
+    const vb = svg.viewBox.baseVal;
+    const out = [];
+    for (const el of svg.querySelectorAll("path, circle, line, rect, text, polygon, polyline")) {
+      if (!(el instanceof SVGGraphicsElement)) continue;
+      // defs の中身は描画木ではない(pattern の座標系は自前で、bbox が負になる)。
+      // 図の切れを見る検査の対象は、実際に描かれる要素だけ
+      if (el.closest("defs")) continue;
+      const b = el.getBBox();
+      if (b.width === 0 && b.height === 0) continue;
+      const tol = 0.5;
+      if (b.x < vb.x - tol || b.y < vb.y - tol || b.x + b.width > vb.x + vb.width + tol || b.y + b.height > vb.y + vb.height + tol) {
+        out.push(`${el.tagName}#${el.id || el.getAttribute("data-id") || el.getAttribute("class") || "?"} bbox=${[b.x, b.y, b.width, b.height].map((v) => v.toFixed(1)).join(",")}`);
+      }
+    }
+    return out;
+  });
+}
+
+async function main() {
+  if (!existsSync(join(dist, "index.html"))) {
+    console.error("dist/index.html が無い。先に npm run build");
+    process.exit(1);
+  }
+  const { srv, base } = await serve();
+  const browser = await chromium.launch();
+  try {
+    const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    const page = await ctx.newPage();
+    const errors = [];
+    const foreign = new Set();
+    page.on("console", (m) => {
+      if (m.type() === "error") errors.push(m.text());
+    });
+    page.on("pageerror", (e) => errors.push(String(e)));
+    page.on("request", (r) => {
+      const u = new URL(r.url());
+      if (u.host !== new URL(base).host) foreign.add(u.host);
+    });
+    await page.goto(base, { waitUntil: "networkidle" });
+    await page.waitForSelector("svg#field");
+    report("B-01", errors.length === 0, `console/pageerror ${errors.length} 件 ${errors.slice(0, 2).join(" | ")}`);
+    report("B-02", foreign.size === 0, `外部 host ${[...foreign].join(",") || "0 件"}`);
+
+    // B-04 陽性対照: viewBox 外の要素を注入して検査が落ちることを先に確かめる
+    const ctrl = await page.evaluate(() => {
+      const svg = document.querySelector("svg#field");
+      const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      c.setAttribute("cx", "-500");
+      c.setAttribute("cy", "-500");
+      c.setAttribute("r", "10");
+      c.id = "positive-control";
+      svg.appendChild(c);
+      return true;
+    });
+    const ctrlHits = await overflowing(page);
+    await page.evaluate(() => document.getElementById("positive-control")?.remove());
+    report("B-04c", ctrl && ctrlHits.some((h) => h.includes("positive-control")), `陽性対照 ${ctrlHits.length} 件検出`);
+
+    // B-03: A-Frame を Pointer 操作で完成させる
+    await page.click('#shelter-list button[data-shelter="a-frame"]');
+    const aframe = shelters.find((s) => s.id === "a-frame");
+    const stepBefore = await page.locator("#steps li.active").getAttribute("data-step");
+    await page.click("path#tarp");
+    await page.waitForTimeout(800);
+    const stepAfterUnfold = await page.locator("#steps li.active").getAttribute("data-step");
+    let reached = stepBefore === "unfold" && stepAfterUnfold === "poles";
+    for (const p of aframe.poles) {
+      const before = await count(page, "g.pole");
+      await drag(page, await center(page, '#tray button[data-part="pole"]'), await center(page, `circle.target[data-kind="pole"][data-id="${p.id}"]`));
+      await page.waitForTimeout(150);
+      const after = await count(page, "g.pole");
+      if (after !== before + 1) reached = false;
+    }
+    await page.waitForTimeout(800); // 張り上げアニメーション
+    for (const g of aframe.pegs) {
+      const before = await count(page, "g.peg");
+      await drag(page, await center(page, '#tray button[data-part="peg"]'), await center(page, `circle.target[data-kind="peg"][data-id="${g.id}"]`));
+      await page.waitForTimeout(100);
+      const after = await count(page, "g.peg");
+      if (after !== before + 1) reached = false;
+    }
+    for (const r of aframe.ropes) {
+      const before = await count(page, "line.rope");
+      await drag(page, await center(page, `circle.anchor[data-rope="${r.id}"]`), await center(page, `g.peg[data-id="${r.peg}"]`));
+      await page.waitForTimeout(100);
+      const after = await count(page, "line.rope");
+      if (after !== before + 1) reached = false;
+    }
+    await page.waitForTimeout(300);
+    const status = (await page.locator("#status").innerText()).trim();
+    const scoreText = (await page.locator('#score-panel [data-field="score"]').innerText()).trim();
+    const score = Number(scoreText);
+    report("B-03", reached && status.includes("SHELTER COMPLETE") && Number.isFinite(score), `到達 ${reached} / status "${status}" / score ${scoreText}`);
+    await page.screenshot({ path: join(shotDir, "aframe-complete-1280.png"), fullPage: true });
+
+    // B-04: 完成状態の幾何
+    const over = await overflowing(page);
+    report("B-04", over.length === 0, `はみ出し ${over.length} 件 ${over.slice(0, 3).join(" | ")}`);
+
+    // B-10: ポール高さ
+    const slider = page.locator('input.pole-height[data-pole="p1"]');
+    const max = Number(await slider.getAttribute("max"));
+    await slider.fill(String(max)); // range の max は SPEC の max より大きく取る
+    await slider.dispatchEvent("input");
+    await page.waitForTimeout(100);
+    const fbHigh = (await page.locator("#feedback").innerText()).trim();
+    const statusHigh = (await page.locator("#status").innerText()).trim();
+    await slider.fill(String(aframe.poles[0].height.ideal));
+    await slider.dispatchEvent("input");
+    await page.waitForTimeout(100);
+    const statusBack = (await page.locator("#status").innerText()).trim();
+    report("B-10", fbHigh.includes("居住空間 HIGH") && !statusHigh.includes("COMPLETE") && statusBack.includes("COMPLETE"), `HIGH: "${fbHigh}" / 戻し: "${statusBack}"`);
+
+    // B-08: 再読込後のベスト
+    await page.reload({ waitUntil: "networkidle" });
+    await page.click('#shelter-list button[data-shelter="a-frame"]');
+    const best = (await page.locator('[data-best="a-frame"]').innerText()).trim();
+    report("B-08", best.includes(String(score)), `best "${best}" vs score ${score}`);
+
+    // B-07: 出典(三種)
+    let srcOk = true;
+    const srcDetail = [];
+    for (const s of shelters) {
+      await page.click(`#shelter-list button[data-shelter="${s.id}"]`);
+      const t = (await page.locator('#source [data-field="title"]').innerText()).trim();
+      const f = (await page.locator('#source [data-field="figure"]').innerText()).trim();
+      const u = await page.locator('#source a[data-field="url"]').getAttribute("href");
+      const ok = t === s.source.title && f === s.source.figure && u === s.source.url;
+      if (!ok) srcOk = false;
+      srcDetail.push(`${s.id}:${ok}`);
+    }
+    report("B-07", srcOk, srcDetail.join(" "));
+
+    // B-09: Lean-To の AUTO
+    await page.click('#shelter-list button[data-shelter="lean-to"]');
+    const bestBefore = (await page.locator('[data-best="lean-to"]').innerText()).trim();
+    await page.click("#btn-auto");
+    await page.waitForFunction(() => document.querySelector("#status")?.textContent?.includes("SHELTER COMPLETE"), null, { timeout: 30000 });
+    const bestAfter = (await page.locator('[data-best="lean-to"]').innerText()).trim();
+    report("B-09", bestBefore === bestAfter, `AUTO 完成・best "${bestBefore}" → "${bestAfter}"`);
+    await page.screenshot({ path: join(shotDir, "leanto-auto-1280.png"), fullPage: true });
+
+    // B-06: フッタ
+    const footer = await page.evaluate(() => {
+      const f = document.querySelector("footer");
+      const cs = getComputedStyle(f);
+      const text = f.innerText.replace(/\s+/g, " ");
+      return { text, links: [...f.querySelectorAll("a")].length, position: cs.position, bottom: cs.bottom };
+    });
+    const iLic = footer.text.indexOf("MIT License");
+    const iGh = footer.text.indexOf("GitHub", Math.max(iLic, 0));
+    const iMenu = footer.text.lastIndexOf("App Menu");
+    report("B-06", footer.links === 5 && iLic >= 0 && iLic < iGh && iGh < iMenu && footer.position === "fixed" && footer.bottom === "0px", `links ${footer.links} / ${footer.position} bottom ${footer.bottom} / "${footer.text}"`);
+
+    // B-05: 二幅
+    let widthOk = true;
+    const wd = [];
+    for (const vp of [{ width: 360, height: 740 }, { width: 1280, height: 800 }]) {
+      await page.setViewportSize(vp);
+      await page.waitForTimeout(200);
+      const m = await page.evaluate(() => ({ sw: document.documentElement.scrollWidth, cw: document.documentElement.clientWidth, h: document.documentElement.scrollHeight }));
+      const ok = m.sw <= m.cw && m.h <= 16000;
+      if (!ok) widthOk = false;
+      wd.push(`${vp.width}px: scroll ${m.sw}/${m.cw} h ${m.h}`);
+      await page.screenshot({ path: join(shotDir, `leanto-${vp.width}.png`), fullPage: true });
+    }
+    report("B-05", widthOk, wd.join(" | "));
+  } finally {
+    await browser.close();
+    srv.close();
+  }
+  const failed = results.filter((r) => !r.ok);
+  console.log(`\n${results.length} 項目 / 失敗 ${failed.length}`);
+  process.exit(failed.length === 0 ? 0 : 1);
+}
+
+main().catch((e) => {
+  console.error("検品器が停止:", e);
+  process.exit(2);
+});

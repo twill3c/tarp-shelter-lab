@@ -109,3 +109,48 @@ describe("T-017 出典七項目(F-13 G-12)", () => {
     }
   });
 });
+
+describe("T-019 屋根面 panels の整合(F-02 G-01・SPEC §4.1)", () => {
+  // 靴紐公式。pitched を panels で分割したのだから、面積の和は元の面積に一致する。
+  // 分割の仕方(何枚か・どこで切るか)には依存しないので、循環しない検算になる。
+  const area = (poly: readonly (readonly [number, number])[]): number => {
+    let s = 0;
+    for (let i = 0; i < poly.length; i++) {
+      const a = poly[i]!;
+      const b = poly[(i + 1) % poly.length]!;
+      s += a[0] * b[1] - b[0] * a[1];
+    }
+    return Math.abs(s) / 2;
+  };
+
+  it("panels の面積和 = pitched の面積", () => {
+    for (const s of shelters) {
+      const whole = area(s.tarp.pitched);
+      expect(whole, s.id).toBeGreaterThan(0);
+      const sum = s.tarp.panels.reduce((acc, p) => acc + area(p.poly), 0);
+      expect(sum, `${s.id} 面積和`).toBeCloseTo(whole, 6);
+    }
+  });
+
+  it("panels の頂点はフィールド内、shade は 0 より大きく 1 以下", () => {
+    for (const s of shelters) {
+      for (const panel of s.tarp.panels) {
+        for (const [x, y] of panel.poly) {
+          expect(x >= 0 && x <= s.field.w && y >= 0 && y <= s.field.h, `${s.id} panel`).toBe(true);
+        }
+        expect(panel.shade, `${s.id} shade`).toBeGreaterThan(0);
+        expect(panel.shade, `${s.id} shade`).toBeLessThanOrEqual(1);
+      }
+    }
+  });
+
+  it("ridge の端点は panels の頂点集合に含まれる(稜線が面の境界であることの検算)", () => {
+    for (const s of shelters) {
+      const verts = new Set(s.tarp.panels.flatMap((p) => p.poly.map(([x, y]) => `${x},${y}`)));
+      expect(s.ridge.length, `${s.id} ridge`).toBeGreaterThan(0);
+      for (const [x, y] of s.ridge) {
+        expect(verts.has(`${x},${y}`), `${s.id} ridge ${x},${y}`).toBe(true);
+      }
+    }
+  });
+});

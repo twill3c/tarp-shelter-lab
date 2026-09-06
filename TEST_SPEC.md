@@ -56,3 +56,26 @@
 | T-016 | G-08 | `data/shelters.json` の文字列にキリル文字・ハングル・制御文字が無い。陽性対照: キリル小文字 a(U+0430)と BEL(U+0007)を含む文字列は検出される | 違反 0・対照は検出 | HC-072 |
 | T-017 | F-13 G-12 | 各シェルターの `source` 七項目(title, edition, year, figure, url, rights, usage)が空でなく、url は https で始まる | 欠落 0 | SPEC §5 |
 | T-018 | F-07 | 途中まで進めた状態に reset を当てると初期状態と深い等価 | 等価 | SPEC §2 F-07 |
+| T-019 | F-02 G-01 | 屋根面 `panels` の面積和が `pitched` の面積と一致(靴紐公式)、各頂点がフィールド内、`ridge` の端点が panels の頂点集合に含まれる | 面積差 < 1e-6・違反 0 | SPEC §4.1 |
+
+## 実ブラウザ検品(`node scripts/browser_check.mjs`・L1)
+
+`vite build` の成果物を手元の静的サーバから配り、Playwright(chromium)で描画して測る。
+**在存でなく幾何と到達を測る**(HC-138)。失敗は終了コード 1。スクリーンショットを
+scratch に残し、図が読めるかの目視は完了条件に含める(HC-041)。
+
+| ID | 対応要求 | ケース | 期待 | 出所 |
+|---|---|---|---|---|
+| B-01 | N-01 G-09 | `dist/` が作れ、ページが console error / pageerror 0 件で描画される | 0 件 | SPEC N-01 |
+| B-02 | N-03 | 読込中の全リクエストの host が配信元だけ | 外部 host 0 件 | SPEC N-03 |
+| B-03 | F-03 F-04 F-06 G-10 | A-Frame を Pointer 操作(タップで展開・ポール/ペグをトレイからドラッグ・端からペグへロープを引く)で完成させる。各操作の後に**状態が変わった証拠**(充填済み要素数の増加・段階表示の前進)を確かめる | COMPLETE 表示・スコア表示 | SPEC §4.5 |
+| B-04 | G-10 | シミュレータ SVG の全要素の `getBBox()` が viewBox に収まる。**陽性対照**: viewBox 外に要素を注入して検査が落ちることを確認 | はみ出し 0・対照は検出 | HC-159 |
+| B-05 | N-02 | 360×740 と 1280×800 で `scrollWidth ≤ clientWidth`、ページ高さ ≤ 16,000px | 二幅とも | HC-078 |
+| B-06 | F-15 G-11 | フッタが 5 つのリンクを持ち、MIT License < GitHub < App Menu の並び、`position: fixed` かつ bottom 0 | 規約どおり | fleet-footer-standard |
+| B-07 | F-13 G-12 | 選択中シェルターの出典欄に data の title・figure・url が出る(三種を切り替えて) | 三種とも一致 | data/shelters.json |
+| B-08 | F-09 | 完成後に再読込するとベストスコアが完成時のスコアと一致して表示される | 一致 | SPEC F-09 |
+| B-09 | F-08 | Lean-To で AUTO を押すと待たずに操作せず COMPLETE に達し、スコアは記録されない | COMPLETE・ベスト未更新 | SPEC §4.6 |
+| B-10 | F-12 | ポール高さのスライダーを max+10 にすると「居住空間 HIGH」が出て完成表示が外れ、ideal に戻すと復帰 | 文の向き | SPEC §4.4 |
+
+タッチ操作(スマートフォン実機)は自動化していない。L1 の完了時に実機または DevTools の
+タッチエミュレーションで A-Frame を一度完成させる(手順として残す)。

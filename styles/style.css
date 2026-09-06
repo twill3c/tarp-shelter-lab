@@ -1,0 +1,639 @@
+/* 「古いフィールドマニュアル × 現代的 UI」(原案 §23)。特定の軍章・徽章は使わない */
+:root {
+  --bg: #f3efe4;
+  --paper: #fbf8f0;
+  --ink: #1f2419;
+  --sub: #5d6350;
+  --line: #cfc7b2;
+  --olive: #4f5b36;
+  --olive-2: #6b7d4a;
+  --khaki: #c9a961;
+  --alert: #a33a2a;
+  --ok: #2f6b3a;
+  --warn: #9a6b12;
+  --radius: 10px;
+  --footer-h: 2.6rem;
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Segoe UI", "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif;
+  line-height: 1.55;
+}
+
+body {
+  padding-bottom: calc(var(--footer-h) + 1rem);
+}
+
+a {
+  color: var(--olive);
+}
+
+h1,
+h2,
+h3 {
+  font-family: "Segoe UI", "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif;
+  letter-spacing: 0.04em;
+  margin: 0 0 0.5rem;
+}
+
+.masthead {
+  padding: 1rem 1.2rem 0.6rem;
+  border-bottom: 3px double var(--olive);
+  background: var(--paper);
+}
+
+.masthead h1 {
+  font-size: 1.5rem;
+  letter-spacing: 0.12em;
+}
+
+.lede {
+  margin: 0;
+  color: var(--sub);
+  font-size: 0.9rem;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  gap: 1rem;
+  padding: 1rem 1.2rem;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.panel {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1rem;
+  min-width: 0;
+}
+
+.panel h2 {
+  font-size: 0.95rem;
+  color: var(--olive);
+  letter-spacing: 0.18em;
+}
+
+/* ---- シェルター一覧 ---- */
+#shelter-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem;
+  display: grid;
+  gap: 0.4rem;
+}
+
+#shelter-list button {
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 8px;
+  padding: 0.55rem 0.7rem;
+  cursor: pointer;
+  font: inherit;
+  color: var(--ink);
+}
+
+#shelter-list button[aria-pressed="true"] {
+  border-color: var(--olive);
+  background: #eef0e3;
+  box-shadow: inset 4px 0 0 var(--olive);
+}
+
+#shelter-list .name {
+  display: block;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+#shelter-list .meta {
+  display: block;
+  color: var(--sub);
+  font-size: 0.78rem;
+}
+
+#shelter-list .best {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--olive);
+}
+
+.source {
+  font-size: 0.78rem;
+  color: var(--sub);
+  border-top: 1px dashed var(--line);
+  padding-top: 0.6rem;
+}
+
+.source h3 {
+  font-size: 0.75rem;
+  letter-spacing: 0.18em;
+  color: var(--olive);
+}
+
+.source p {
+  margin: 0.2rem 0;
+  overflow-wrap: anywhere;
+}
+
+.src-title {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+/* ---- シミュレータ ---- */
+.sim-head {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.status {
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--ok);
+  min-height: 1.4em;
+}
+
+.timer {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  color: var(--sub);
+  font-size: 0.9rem;
+}
+
+.stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 84px;
+  gap: 0.6rem;
+  align-items: start;
+}
+
+svg#field {
+  width: 100%;
+  height: auto;
+  display: block;
+  border: 2px solid var(--olive);
+  border-radius: 8px;
+  background: #6b7d4a;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.tray {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.tray button {
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 8px;
+  padding: 0.5rem 0.2rem;
+  display: grid;
+  justify-items: center;
+  gap: 0.15rem;
+  cursor: grab;
+  touch-action: none;
+  font: inherit;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  color: var(--ink);
+}
+
+.tray button[data-remaining="0"] {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.tray button .count {
+  color: var(--sub);
+  font-variant-numeric: tabular-nums;
+}
+
+.icon {
+  width: 34px;
+  height: 34px;
+  display: block;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.icon-pole {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 34 34'><rect x='15' y='4' width='4' height='26' rx='1' fill='%234f5b36'/><circle cx='17' cy='4' r='3' fill='%23c9a961'/></svg>");
+}
+
+.icon-peg {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 34 34'><path d='M12 6 h10 l-5 24 z' fill='%23a33a2a'/><rect x='10' y='4' width='14' height='4' rx='1' fill='%231f2419'/></svg>");
+}
+
+/* SVG 内の要素 */
+.tarp {
+  fill: url(#tarpShade);
+  stroke: #7a6330;
+  stroke-width: 3;
+  cursor: pointer;
+  transition: opacity 0.3s;
+}
+
+.tarp.slack {
+  filter: saturate(0.7);
+}
+
+.target {
+  fill: rgba(255, 255, 255, 0.12);
+  stroke: #fbf8f0;
+  stroke-width: 2;
+  stroke-dasharray: 6 5;
+}
+
+.target.hint {
+  stroke: #ffd54a;
+  stroke-width: 4;
+  animation: pulse 0.9s ease-in-out infinite alternate;
+}
+
+@keyframes pulse {
+  from {
+    stroke-opacity: 0.4;
+  }
+  to {
+    stroke-opacity: 1;
+  }
+}
+
+.anchor {
+  fill: #ffd54a;
+  stroke: #7a6330;
+  stroke-width: 2;
+  cursor: crosshair;
+  animation: pulse 0.9s ease-in-out infinite alternate;
+}
+
+.anchor.hint {
+  fill: #fff;
+}
+
+.rope {
+  stroke: #e9dfc4;
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.rope.slack {
+  stroke: #d9a24a;
+  stroke-dasharray: 8 6;
+}
+
+.rope.loose {
+  stroke: #a33a2a;
+  stroke-dasharray: 3 6;
+}
+
+.peg circle {
+  fill: #a33a2a;
+  stroke: #1f2419;
+  stroke-width: 2;
+  cursor: grab;
+}
+
+.peg.hint circle {
+  stroke: #ffd54a;
+  stroke-width: 4;
+}
+
+.pole circle.head {
+  fill: #c9a961;
+  stroke: #1f2419;
+  stroke-width: 2;
+}
+
+.pole circle.base {
+  fill: #1f2419;
+}
+
+.label {
+  font-size: 13px;
+  fill: #fbf8f0;
+  paint-order: stroke;
+  stroke: #2a2f22;
+  stroke-width: 3px;
+  pointer-events: none;
+  font-family: "Segoe UI", system-ui, sans-serif;
+}
+
+.ghost {
+  pointer-events: none;
+  opacity: 0.85;
+}
+
+.drag-line {
+  stroke: #ffd54a;
+  stroke-width: 3;
+  stroke-dasharray: 6 4;
+  pointer-events: none;
+}
+
+/* ---- ステップ・操作 ---- */
+.steps {
+  list-style: none;
+  padding: 0;
+  margin: 0.8rem 0 0.3rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.steps li {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  padding: 0.25rem 0.55rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--sub);
+  background: #fff;
+}
+
+.steps li.done {
+  background: #e6ebd9;
+  color: var(--olive);
+  border-color: var(--olive-2);
+}
+
+.steps li.active {
+  background: var(--olive);
+  color: #fff;
+  border-color: var(--olive);
+}
+
+.instruction {
+  margin: 0.3rem 0 0;
+  font-weight: 700;
+}
+
+.feedback {
+  margin: 0.2rem 0 0.4rem;
+  min-height: 1.4em;
+  color: var(--warn);
+}
+
+.feedback.miss {
+  color: var(--alert);
+}
+
+.feedback.good {
+  color: var(--ok);
+}
+
+.controls {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.heights,
+.tensions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  font-size: 0.8rem;
+  color: var(--sub);
+}
+
+.heights label {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 0.4rem;
+  align-items: center;
+  min-width: 220px;
+}
+
+.heights input[type="range"] {
+  width: 100%;
+}
+
+.heights .hstat {
+  font-weight: 700;
+}
+
+.heights .hstat.LOW,
+.heights .hstat.HIGH {
+  color: var(--alert);
+}
+
+.heights .hstat.OK {
+  color: var(--ok);
+}
+
+.tensions .gauge {
+  display: inline-grid;
+  grid-template-columns: auto 80px auto;
+  gap: 0.3rem;
+  align-items: center;
+}
+
+.tensions .bar {
+  height: 8px;
+  background: #e3ded0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.tensions .bar i {
+  display: block;
+  height: 100%;
+  background: var(--warn);
+}
+
+.tensions .bar i.ok {
+  background: var(--ok);
+}
+
+.buttons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.buttons button {
+  font: inherit;
+  letter-spacing: 0.12em;
+  padding: 0.55rem 1.1rem;
+  border-radius: 8px;
+  border: 1px solid var(--olive);
+  background: var(--olive);
+  color: #fff;
+  cursor: pointer;
+  min-width: 96px;
+}
+
+.buttons button#btn-reset {
+  background: #fff;
+  color: var(--olive);
+}
+
+.buttons button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.score-panel {
+  margin-top: 0.8rem;
+  border: 2px solid var(--olive);
+  border-radius: var(--radius);
+  padding: 0.8rem 1rem;
+  background: #fff;
+}
+
+.score-panel h3 {
+  letter-spacing: 0.2em;
+  color: var(--olive);
+  font-size: 0.85rem;
+}
+
+.score-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  gap: 0.5rem;
+}
+
+.score-grid .k {
+  display: block;
+  font-size: 0.7rem;
+  color: var(--sub);
+  letter-spacing: 0.15em;
+}
+
+.score-grid .v {
+  display: block;
+  font-size: 1.4rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.score-grid .rank {
+  color: var(--olive);
+  font-size: 1.8rem;
+}
+
+.score-note {
+  margin: 0.5rem 0 0;
+  font-size: 0.8rem;
+  color: var(--sub);
+}
+
+/* ---- 解説 ---- */
+.notes,
+.doc {
+  max-width: 1280px;
+  margin: 0 auto 1rem;
+  width: calc(100% - 2.4rem);
+}
+
+.doc li {
+  margin-bottom: 0.3rem;
+}
+
+.disclaimer {
+  font-size: 0.8rem;
+  color: var(--sub);
+  border-top: 1px dashed var(--line);
+  padding-top: 0.6rem;
+}
+
+/* fleet: fixed footer */
+footer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  background: var(--bg);
+  border-top: 1px solid var(--line);
+  color: var(--sub);
+  font-size: 0.78rem;
+  text-align: center;
+  padding: 0.5rem 1rem;
+  white-space: nowrap;
+  overflow-x: auto;
+}
+
+footer p {
+  display: inline;
+  margin: 0;
+}
+
+footer a {
+  color: var(--sub);
+}
+
+/* ---- スマートフォン(縦) ---- */
+@media (max-width: 760px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 0.6rem;
+  }
+
+  .shelters {
+    order: 2;
+  }
+
+  .simulator {
+    order: 1;
+  }
+
+  .stage {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .tray {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .tray button {
+    grid-template-columns: auto auto auto;
+    justify-items: start;
+    padding: 0.5rem 0.8rem;
+  }
+
+  .notes,
+  .doc {
+    width: calc(100% - 1.2rem);
+  }
+
+  /* SVG のラベルは viewBox 単位なので、幅が縮むと実効 5px まで小さくなって読めない。
+     狭い幅では字だけ大きくする(座標は変えない) */
+  .label {
+    font-size: 26px;
+    stroke-width: 5px;
+  }
+}
+
+/* 屋根面と稜線。平面図で「張った屋根」を立体に見せる。
+   クラス名は .panel にしない —— ページ側の .panel(左右のパネル)と衝突し、
+   pointer-events: none がページ全体のクリックを殺す */
+.tarp-panel {
+  stroke: none;
+  pointer-events: none;
+}
+
+.ridge {
+  fill: none;
+  stroke: #7a6330;
+  stroke-width: 4;
+  stroke-linecap: round;
+  pointer-events: none;
+}

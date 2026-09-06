@@ -65,7 +65,7 @@ export const STEPS: readonly StepDef[] = [
   { id: "pegs", label: "STEP 3 ペグ", instruction: "ペグを印の位置へドラッグする" },
   { id: "ropes", label: "STEP 4 ロープ", instruction: "光っている端からペグへ線を引く" },
   { id: "tension", label: "STEP 5 張力", instruction: "ペグを動かしてすべてのロープを張る" },
-  { id: "complete", label: "COMPLETE", instruction: "SHELTER COMPLETE" },
+  { id: "complete", label: "COMPLETE", instruction: "張り終えた。スコアを確認して RESET、または別のシェルターへ" },
 ];
 
 export function initialState(shelter: Shelter): SimState {

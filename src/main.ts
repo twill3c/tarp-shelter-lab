@@ -1,0 +1,302 @@
+// 画面の主制御。状態は SimState 一つ。描画は状態から毎回作り直す。
+import raw from "../data/shelters.json";
+import { morphPoly, sleep } from "./animate";
+import { autoPlan } from "./auto";
+import type { Point } from "./geometry";
+import { TENSION_SLACK_CM } from "./judge";
+import type { Shelter } from "./model";
+import { loadShelters } from "./model";
+import { trackDrag } from "./pointer";
+import { computeScore, rankOf } from "./score";
+import type { Action, SimEvent, SimState } from "./simulator";
+import { blockers, initialState, isComplete, nextTarget, reduce } from "./simulator";
+import type { BestRecord, StorageLike } from "./storage";
+import { loadBest, saveBest } from "./storage";
+import {
+  drawGhost,
+  nearestPlacedPeg,
+  renderControls,
+  renderFeedback,
+  renderField,
+  renderScore,
+  renderShelterList,
+  renderSource,
+  renderSteps,
+  renderTimer,
+  renderTray,
+  setField,
+  tarpPolyFor,
+} from "./view";
+
+const shelters = loadShelters(raw);
+
+const storage: StorageLike = {
+  getItem: (k) => window.localStorage.getItem(k),
+  setItem: (k, v) => window.localStorage.setItem(k, v),
+};
+
+interface App {
+  state: SimState;
+  hint: { kind: "unfold" | "pole" | "peg" | "rope" | "tension"; id: string } | null;
+  busy: boolean;
+  /** AUTO 再生中はスコアを記録しない(SPEC §4.6) */
+  auto: boolean;
+  lastScore: { score: number; rank: string; seconds: number; mistakes: number; hints: number } | null;
+}
+
+const app: App = { state: initialState(shelters[0]!), hint: null, busy: false, auto: false, lastScore: null };
+
+function svg(): SVGSVGElement {
+  const el = document.querySelector<SVGSVGElement>("svg#field");
+  if (!el) throw new Error("svg#field が無い");
+  return el;
+}
+
+function bests(): Record<string, BestRecord | null> {
+  return Object.fromEntries(shelters.map((s) => [s.id, loadBest(storage, s.id)]));
+}
+
+function elapsedSeconds(s: SimState): number {
+  if (s.startedAt === null) return 0;
+  return ((s.completedAt ?? performance.now()) - s.startedAt) / 1000;
+}
+
+function render(tarpOverride?: Point[] | undefined): void {
+  const s = app.state;
+  renderField({ state: s, hint: app.hint, ...(tarpOverride ? { tarpOverride: tarpOverride.map((p) => [p.x, p.y] as [number, number]) } : {}) });
+  renderTray(s);
+  renderSteps(s);
+  renderControls(s, onHeight);
+  renderTimer(s, performance.now());
+  const b = bests();
+  renderShelterList(shelters, s.shelter.id, b, selectShelter);
+  renderScore(app.lastScore, b[s.shelter.id] ?? null, app.auto ? "AUTO 再生の記録は保存しません" : "ベストスコアはこの端末にだけ保存されます");
+  for (const id of ["btn-hint", "btn-auto"]) {
+    const btn = document.querySelector<HTMLButtonElement>(`#${id}`);
+    if (btn) btn.disabled = app.busy || isComplete(s);
+  }
+}
+
+function morph(from: SimState, to: SimState): Promise<void> {
+  const a = tarpPolyFor(from);
+  const b = tarpPolyFor(to);
+  if (a === b) return Promise.resolve();
+  return morphPoly(a, b, 600, (poly) => {
+    renderField({ state: to, hint: app.hint, tarpOverride: poly });
+  });
+}
+
+async function dispatch(action: Action): Promise<SimEvent | undefined> {
+  const before = app.state;
+  const { state, event } = reduce(before, action);
+  app.state = state;
+  if (event?.kind === "miss" || event?.kind === "wrong-rope") {
+    renderFeedback(event.message, "miss");
+  } else if (event?.kind === "complete") {
+    // 見出し(#status)が既に COMPLETE を出すので、ここは同じ文を繰り返さない
+    renderFeedback("RESET でもう一度、または別のシェルターへ", "good");
+  } else {
+    // 完成を妨げている理由は、イベントの有無に関わらず出し直す。
+    // setPoleHeight のようにイベントを返さない操作でも、画面が古い文を持ち続けないようにする
+    const blocked = blockers(state);
+    if (blocked.length > 0) renderFeedback(blocked[0]!, "");
+    else if (event) renderFeedback(event.message, "good");
+    else renderFeedback("", "");
+  }
+  if (tarpPolyFor(before) !== tarpPolyFor(state)) {
+    app.busy = true;
+    render();
+    await morph(before, state);
+    app.busy = false;
+  }
+  if (event?.kind === "complete") onComplete();
+  app.hint = null;
+  render();
+  return event;
+}
+
+function onComplete(): void {
+  const s = app.state;
+  const seconds = elapsedSeconds(s);
+  const score = computeScore({ seconds: Math.round(seconds), mistakes: s.mistakes, hints: s.hints });
+  const rank = rankOf(score);
+  app.lastScore = { score, rank, seconds, mistakes: s.mistakes, hints: s.hints };
+  if (!app.auto) {
+    saveBest(storage, s.shelter.id, { score, rank, seconds: Math.round(seconds), mistakes: s.mistakes, at: new Date().toISOString() });
+  }
+}
+
+function onHeight(pole: string, height: number): void {
+  void dispatch({ type: "setPoleHeight", pole, height });
+}
+
+function selectShelter(id: string): void {
+  if (app.busy) return;
+  const sh = shelters.find((s) => s.id === id);
+  if (!sh) return;
+  startShelter(sh);
+}
+
+function startShelter(sh: Shelter): void {
+  app.state = initialState(sh);
+  app.hint = null;
+  app.auto = false;
+  app.lastScore = null;
+  setField(sh);
+  renderSource(sh);
+  renderFeedback("", "");
+  render();
+}
+
+/** タープをタップして展開 */
+function onTarpClick(): void {
+  if (app.busy || app.state.unfolded) return;
+  void dispatch({ type: "unfold", now: performance.now() });
+}
+
+/** トレイからのドラッグ(ポール・ペグ) */
+function onTrayDown(part: "pole" | "peg", ev: PointerEvent): void {
+  if (app.busy) return;
+  const btn = ev.currentTarget as HTMLButtonElement;
+  if (btn.getAttribute("data-remaining") === "0") return;
+  if (!app.state.unfolded) {
+    renderFeedback("先にタープを広げてください", "miss");
+    return;
+  }
+  const s = svg();
+  trackDrag(s, ev, {
+    move: (p) => drawGhost(part, p, null),
+    end: (p, _c, inside) => {
+      drawGhost(null, null, null);
+      if (!inside) return;
+      void dispatch(part === "pole" ? { type: "dropPole", x: p.x, y: p.y, now: performance.now() } : { type: "dropPeg", x: p.x, y: p.y, now: performance.now() });
+    },
+    cancel: () => drawGhost(null, null, null),
+  });
+}
+
+/** ロープの端からペグへ線を引く / 打ったペグをつまんで動かす */
+function onFieldDown(ev: PointerEvent): void {
+  if (app.busy) return;
+  const target = ev.target as Element;
+  const s = svg();
+
+  const anchorEl = target.closest("circle.anchor");
+  if (anchorEl) {
+    const ropeId = anchorEl.getAttribute("data-rope");
+    const def = app.state.shelter.ropes.find((r) => r.id === ropeId);
+    if (!def) return;
+    trackDrag(s, ev, {
+      move: (p) => drawGhost(null, null, { from: def.anchor, to: p }),
+      end: (p) => {
+        drawGhost(null, null, null);
+        const pegId = nearestPlacedPeg(app.state, p, app.state.shelter.tolerance);
+        if (!pegId) {
+          renderFeedback("ペグまで線を引いてください", "miss");
+          return;
+        }
+        void dispatch({ type: "attachRope", rope: def.id, peg: pegId, now: performance.now() });
+      },
+      cancel: () => drawGhost(null, null, null),
+    });
+    return;
+  }
+
+  const pegEl = target.closest("g.peg");
+  if (pegEl) {
+    const pegId = pegEl.getAttribute("data-id");
+    if (!pegId) return;
+    trackDrag(s, ev, {
+      move: (p) => {
+        void dispatch({ type: "movePeg", peg: pegId, x: p.x, y: p.y });
+      },
+      end: () => {
+        void dispatch({ type: "releasePeg", peg: pegId, now: performance.now() });
+      },
+      cancel: () => {
+        void dispatch({ type: "releasePeg", peg: pegId, now: performance.now() });
+      },
+    });
+    return;
+  }
+
+  if (target.closest("path#tarp")) onTarpClick();
+}
+
+async function runAuto(): Promise<void> {
+  if (app.busy) return;
+  app.busy = true;
+  app.auto = true;
+  app.state = initialState(app.state.shelter);
+  app.hint = null;
+  app.lastScore = null;
+  render();
+  const plan = autoPlan(app.state.shelter, performance.now());
+  for (const action of plan) {
+    app.busy = false; // dispatch 内のアニメーションに任せる
+    await dispatch({ ...action, ...(("now" in action) ? { now: performance.now() } : {}) } as Action);
+    app.busy = true;
+    render();
+    await sleep(220);
+  }
+  app.busy = false;
+  render();
+}
+
+function onHint(): void {
+  if (app.busy) return;
+  const t = nextTarget(app.state);
+  if (!t) {
+    renderFeedback("すべて張れています", "good");
+    return;
+  }
+  void dispatch({ type: "hint" }).then(() => {
+    app.hint = t;
+    const msg: Record<string, string> = {
+      unfold: "タープをタップして広げる",
+      pole: `ポールを ${t.id} の印へ`,
+      peg: `ペグを ${t.id} の印へ`,
+      rope: `ロープ ${t.id} を対応するペグへ`,
+      tension: `ペグ ${t.id} を外へ引いて張る`,
+    };
+    renderFeedback(msg[t.kind] ?? "", "");
+    render();
+  });
+}
+
+function tick(): void {
+  renderTimer(app.state, performance.now());
+  requestAnimationFrame(tick);
+}
+
+function boot(): void {
+  startShelter(shelters[0]!);
+  const s = svg();
+  s.addEventListener("pointerdown", onFieldDown, { passive: false });
+  for (const part of ["pole", "peg"] as const) {
+    const btn = document.querySelector<HTMLButtonElement>(`#tray button[data-part="${part}"]`);
+    btn?.addEventListener("pointerdown", (ev) => onTrayDown(part, ev));
+  }
+  document.querySelector("#btn-reset")?.addEventListener("click", () => {
+    if (app.busy) return;
+    app.auto = false;
+    app.lastScore = null;
+    void dispatch({ type: "reset" });
+  });
+  document.querySelector("#btn-hint")?.addEventListener("click", onHint);
+  document.querySelector("#btn-auto")?.addEventListener("click", () => void runAuto());
+  requestAnimationFrame(tick);
+}
+
+function start(): void {
+  boot();
+  // 吸着の許容(cm)は画面の説明と同じ定数から出す(文書とコードの二重管理を避ける)
+  const note = document.querySelector("#walk li:nth-child(6)");
+  if (note) note.textContent = `たるんだロープは、ペグをつまんで外へ引く。${TENSION_SLACK_CM} cm 以内なら吸い付いて張り切る。`;
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", start);
+} else {
+  start();
+}

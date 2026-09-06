@@ -37,13 +37,22 @@ export interface Source {
   usage: string;
 }
 
+export interface Panel {
+  /** 屋根面の平面投影 */
+  poly: Poly;
+  /** 明度(0 < shade ≤ 1)。稜線で分けた面に陰影を付けて立体に見せる */
+  shade: number;
+}
+
 export interface Shelter {
   id: string;
   name: string;
   nameJa: string;
   difficulty: number;
   field: { w: number; h: number };
-  tarp: { folded: Poly; flat: Poly; pitched: Poly };
+  tarp: { folded: Poly; flat: Poly; pitched: Poly; panels: Panel[] };
+  /** 稜線(棟)。端点は panels の頂点であること */
+  ridge: Poly;
   poles: PoleDef[];
   pegs: PegDef[];
   ropes: RopeDef[];
@@ -79,14 +88,24 @@ function arr(v: unknown, path: string): unknown[] {
   return v;
 }
 
-function poly(v: unknown, path: string): Poly {
+function points(v: unknown, path: string, min: number): Poly {
   const a = arr(v, path);
-  if (a.length < 3) throw new DataError(path, "多角形は 3 頂点以上");
+  if (a.length < min) throw new DataError(path, `${min} 点以上が必要`);
   return a.map((p, i) => {
     const q = arr(p, `${path}[${i}]`);
     if (q.length !== 2) throw new DataError(`${path}[${i}]`, "[x, y] が必要");
     return [num(q[0], `${path}[${i}].x`), num(q[1], `${path}[${i}].y`)];
   });
+}
+
+/** 多角形は 3 頂点以上 */
+function poly(v: unknown, path: string): Poly {
+  return points(v, path, 3);
+}
+
+/** 折れ線(稜線)は 2 点以上 */
+function polyline(v: unknown, path: string): Poly {
+  return points(v, path, 2);
 }
 
 function point(v: unknown, path: string): Point {
@@ -137,7 +156,14 @@ export function validateShelter(v: unknown, idx: number): Shelter {
       folded: poly(tarp["folded"], `${id}.tarp.folded`),
       flat: poly(tarp["flat"], `${id}.tarp.flat`),
       pitched: poly(tarp["pitched"], `${id}.tarp.pitched`),
+      panels: arr(tarp["panels"], `${id}.tarp.panels`).map((x, i) => {
+        const q = obj(x, `${id}.tarp.panels[${i}]`);
+        const shade = num(q["shade"], `${id}.tarp.panels[${i}].shade`);
+        if (!(shade > 0 && shade <= 1)) throw new DataError(`${id}.tarp.panels[${i}].shade`, "0 < shade ≤ 1 でない");
+        return { poly: poly(q["poly"], `${id}.tarp.panels[${i}].poly`), shade };
+      }),
     },
+    ridge: polyline(o["ridge"], `${id}.ridge`),
     poles,
     pegs,
     ropes,

@@ -4,3 +4,4 @@ coverage/
 .vercel/
 *.tsbuildinfo
 .DS_Store
+logs/shots/

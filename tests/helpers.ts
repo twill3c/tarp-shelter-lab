@@ -29,7 +29,16 @@ export function minimalShelter(overrides: Partial<Shelter> = {}): Shelter {
         [280, 200],
         [120, 200],
       ],
+      // 棟 x=200 で左右に割る。面積和 160×100 = 8000 は pitched と一致する
+      panels: [
+        { poly: [[120, 100], [200, 100], [200, 200], [120, 200]], shade: 0.8 },
+        { poly: [[200, 100], [280, 100], [280, 200], [200, 200]], shade: 1 },
+      ],
     },
+    ridge: [
+      [200, 100],
+      [200, 200],
+    ],
     poles: [{ id: "p1", x: 200, y: 100, height: { min: 90, ideal: 120, max: 150 } }],
     pegs: [
       { id: "g1", x: 100, y: 220 },
