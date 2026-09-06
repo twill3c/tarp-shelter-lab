@@ -13,7 +13,10 @@
     "test:watch": "vitest",
     "check:gates": "node scripts/check_gates.mjs",
     "verify": "npm run typecheck && npm test && npm run check:gates && npm run build && npm run check:browser",
-    "check:browser": "node scripts/browser_check.mjs"
+    "check:browser": "node scripts/browser_check.mjs",
+    "prebuild": "node scripts/build_stamp.mjs",
+    "check:prod": "node scripts/prod_check.mjs",
+    "deploy": "vercel deploy --prod --yes --scope twill3c-8670s-projects --archive=tgz"
   },
   "devDependencies": {
     "@types/node": "^26.4.1",
