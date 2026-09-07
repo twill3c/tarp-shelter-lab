@@ -156,3 +156,49 @@ describe("T-019 屋根面 panels の整合(F-02 G-01・SPEC §4.1)", () => {
     }
   });
 });
+
+describe("T-041 開口の向きが幾何と一致する(F-17 G-31)", () => {
+  // 片側だけを持ち上げる型では、開口は持ち上げた側を向く。だから opening は自由な宣言ではない。
+  // 2026-09-08: この検査を書いたら Lean-To が逆(ポールは北・開口は南)だと分かった。
+  const centroid = (pts: readonly (readonly [number, number])[]) => ({
+    x: pts.reduce((a, p) => a + p[0], 0) / pts.length,
+    y: pts.reduce((a, p) => a + p[1], 0) / pts.length,
+  });
+  /** 0 = 画面の上(北)、90 = 右(東) */
+  const bearing = (dx: number, dy: number) => ((Math.atan2(dx, -dy) * 180) / Math.PI + 360) % 360;
+  const diff = (a: number, b: number) => {
+    const d = Math.abs(((a - b) % 360) + 360) % 360;
+    return d > 180 ? 360 - d : d;
+  };
+  /** ポールが重心から離れていれば、開口は幾何から決まる */
+  const OFFSET_MIN = 30;
+  const ANGLE_MAX = 45;
+
+  function geometricOpening(s: (typeof shelters)[number]): number | null {
+    const c = centroid(s.tarp.pitched);
+    const p = centroid(s.poles.map((x) => [x.x, x.y] as [number, number]));
+    const dx = p.x - c.x;
+    const dy = p.y - c.y;
+    return Math.hypot(dx, dy) < OFFSET_MIN ? null : bearing(dx, dy);
+  }
+
+  it("ポールが偏っている型は、開口がその方位と 45 度以内", () => {
+    for (const s of shelters) {
+      const want = geometricOpening(s);
+      if (want === null) continue;
+      expect(s.opening, `${s.id} は片側を持ち上げるので開口が幾何から決まる`).not.toBeNull();
+      expect(diff(s.opening!, want), `${s.id} 宣言 ${s.opening} / 幾何 ${want.toFixed(1)}`).toBeLessThanOrEqual(ANGLE_MAX);
+    }
+  });
+  it("幾何から決まらない型は、理由を openingNote に書いている(黙って除外しない)", () => {
+    for (const s of shelters) {
+      if (geometricOpening(s) !== null) continue;
+      expect(s.openingNote ?? "", `${s.id}`).not.toBe("");
+    }
+  });
+  it("陽性対照: 開口を 180 度ずらすと落ちる", () => {
+    const target = shelters.find((s) => geometricOpening(s) !== null)!;
+    const want = geometricOpening(target)!;
+    expect(diff((target.opening! + 180) % 360, want)).toBeGreaterThan(ANGLE_MAX);
+  });
+});

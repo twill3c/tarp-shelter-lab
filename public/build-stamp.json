@@ -1,5 +1,5 @@
 {
- "stamp": "e752d00260bed501",
+ "stamp": "d5258ffde2218927",
  "files": [
   {
    "path": "index.html",
@@ -58,8 +58,8 @@
   },
   {
    "path": "src/model.ts",
-   "bytes": 7090,
-   "sha": "0e6b610e5f70"
+   "bytes": 7338,
+   "sha": "4173e869fc8f"
   },
   {
    "path": "src/pointer.ts",
@@ -128,8 +128,8 @@
   },
   {
    "path": "data/missions.json",
-   "bytes": 1922,
-   "sha": "7bfcb5e4706e"
+   "bytes": 1930,
+   "sha": "31ab52ab2971"
   },
   {
    "path": "data/quiz.json",
@@ -138,8 +138,8 @@
   },
   {
    "path": "data/shelters.json",
-   "bytes": 17011,
-   "sha": "3c1093870f55"
+   "bytes": 17396,
+   "sha": "2a87a05e6303"
   }
  ]
 }

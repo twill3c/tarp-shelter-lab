@@ -33,12 +33,12 @@ describe("T-035 正解が一意(G-25)", () => {
 });
 
 describe("T-036 選択肢が死んでいない(G-26)", () => {
-  // 2026-09-07・型 5 種で再実測(SPEC §4.10)
+  // 2026-09-08・Lean-To の開口修正の後に再実測(SPEC §4.10)
   const table: Record<string, string> = {
     q1: "a-frame",
     q2: "a-frame",
     q3: "plow-point",
-    q4: "lean-to",
+    q4: "plow-point",
     q5: "teepee",
     q6: NONE_ID,
   };
@@ -54,8 +54,9 @@ describe("T-036 選択肢が死んでいない(G-26)", () => {
   it("一度も正解にならない型は、SPEC に理由を書いた型だけ", () => {
     // 型が増えると、モデルの二軸で他に劣る型が出る。**測って認め、理由を書く**のが正しい ——
     // 「どの型も一度は正解になる」を要求すると、設問を歪めてでも通したくなる。
-    // 2026-09-07 実測: Diamond は鋤先に勾配でも正面投影でも材料でも劣る(SPEC §4.10)
-    const NEVER_WINS = ["diamond"];
+    // 2026-09-08 実測: Lean-To と Diamond は鋤先に勾配でも正面投影でも材料でも劣り、
+    // 上限で鋤先だけを外すこともできない(SPEC §4.9)
+    const NEVER_WINS = ["lean-to", "diamond"];
     const answers = new Set(questions.map((q) => evaluateQuestion(q, shelters).answerId));
     const never = shelters.filter((sh) => !answers.has(sh.id)).map((sh) => sh.id);
     expect(never.sort()).toEqual([...NEVER_WINS].sort());

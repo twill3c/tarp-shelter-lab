@@ -55,6 +55,8 @@ export interface Shelter {
   ridge: Poly;
   /** 開口が向く方位(度・0 = 画面の上)。両側が閉じる型は null(SPEC §4.7) */
   opening: number | null;
+  /** 開口が幾何から決まらない型で、その理由(G-31 の対象外を黙って作らないため) */
+  openingNote?: string;
   poles: PoleDef[];
   pegs: PegDef[];
   ropes: RopeDef[];
@@ -175,6 +177,7 @@ export function validateShelter(v: unknown, idx: number): Shelter {
     },
     ridge: polyline(o["ridge"], `${id}.ridge`),
     opening: openingOf(o["opening"], `${id}.opening`),
+    ...(o["openingNote"] === undefined ? {} : { openingNote: str(o["openingNote"], `${id}.openingNote`) }),
     poles,
     pegs,
     ropes,

@@ -29,13 +29,13 @@ function ctx(missionId: string) {
 }
 
 describe("T-031 各課題は型を選ばせる(G-22)", () => {
-  // 2026-09-07・型 5 種で再実測した表(SPEC §4.9)。**課題は一意である必要が無い** ——
+  // 2026-09-08・型 5 種 + Lean-To の開口修正の後に再実測した表(SPEC §4.9)。**課題は一意である必要が無い** ——
   // 達成の道が複数あるのは健全で、要求は「できる型が 1 つ以上・できない型が 1 つ以上」である
   const table: Record<string, string[]> = {
     m01: ["a-frame", "plow-point", "teepee"],
     m02: ["a-frame"],
     m03: ["diamond", "plow-point", "teepee"],
-    m04: ["lean-to"],
+    m04: ["lean-to", "plow-point"],
   };
   it("課題 × 型の総当たりで、達成できる型が 1 つ以上・できない型が 1 つ以上", () => {
     for (const m of missions) {
