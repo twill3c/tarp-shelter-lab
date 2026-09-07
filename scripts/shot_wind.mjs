@@ -26,6 +26,25 @@ const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1000, height: 900 } });
 await page.goto(base, { waitUntil: "networkidle" });
 
+if (process.argv.includes("--new")) {
+  for (const id of ["plow-point", "teepee"]) {
+    await page.click(`#shelter-list button[data-shelter="${id}"]`);
+    await page.waitForTimeout(150);
+    await page.click("#btn-auto");
+    await page.waitForFunction(() => document.querySelector("#status")?.textContent?.includes("SHELTER COMPLETE"), null, { timeout: 40000 });
+    await page.locator("#rain-rate").selectOption("3");
+    await page.waitForTimeout(3000);
+    const rv = (await page.locator("#rain-verdict").innerText()).trim();
+    const rr = (await page.locator("#rain-reason").innerText()).trim();
+    console.log(`${id}: ${rv}(${rr})`);
+    await page.locator("section.simulator").screenshot({ path: join(shots, `new-${id}.png`) });
+    await page.locator("#rain-rate").selectOption("0");
+  }
+  await browser.close();
+  srv.close();
+  process.exit(0);
+}
+
 if (process.argv.includes("--knots")) {
   for (let i = 1; i <= 3; i++) {
     await page.click(`#knot-tabs button:nth-child(${i})`);

@@ -356,12 +356,14 @@ async function main() {
     const verdict1 = (await page.locator("#quiz-verdict").innerText()).trim();
     const detailRows = await count(page, "#quiz-detail li");
     const disabled = await page.locator("#quiz-choices button").first().isDisabled();
-    report("B-22", choiceCount === 4 && verdict1.length > 0 && disabled, `選択肢 ${choiceCount} / 判定 "${verdict1}" / 回答後は押せない ${disabled}`);
+    // 件数は定数で書かない。選択肢は「型の数 + どれも適さない」、理由は型の数(HC-016)
+    const expectedChoices = shelters.length + 1;
+    report("B-22", choiceCount === expectedChoices && verdict1.length > 0 && disabled, `選択肢 ${choiceCount}/${expectedChoices} / 判定 "${verdict1}" / 回答後は押せない ${disabled}`);
 
     // B-23: 画面の数値が計算と一致する(◎ の行が正解の型)
     const rows = await page.locator("#quiz-detail li").allInnerTexts();
     const marked = rows.filter((r) => r.startsWith("◎")).length;
-    report("B-23", detailRows === 3 && marked === 1 && rows.every((r) => /適性|使えない/.test(r)), `理由 ${detailRows} 行 / 正解印 ${marked} 個 / 先頭 "${(rows[0] ?? "").replace(/\s+/g, " ")}"`);
+    report("B-23", detailRows === shelters.length && marked === 1 && rows.every((r) => /適性|使えない/.test(r)), `理由 ${detailRows}/${shelters.length} 行 / 正解印 ${marked} 個 / 先頭 "${(rows[0] ?? "").replace(/\s+/g, " ")}"`);
 
     // B-24: 次の問題へ
     await page.click("#quiz-next");

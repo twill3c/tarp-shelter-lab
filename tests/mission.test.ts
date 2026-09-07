@@ -29,7 +29,14 @@ function ctx(missionId: string) {
 }
 
 describe("T-031 各課題は型を選ばせる(G-22)", () => {
-  const table: Record<string, string> = { m01: "a-frame", m02: "a-frame", m03: "diamond", m04: "lean-to" };
+  // 2026-09-07・型 5 種で再実測した表(SPEC §4.9)。**課題は一意である必要が無い** ——
+  // 達成の道が複数あるのは健全で、要求は「できる型が 1 つ以上・できない型が 1 つ以上」である
+  const table: Record<string, string[]> = {
+    m01: ["a-frame", "plow-point", "teepee"],
+    m02: ["a-frame"],
+    m03: ["diamond", "plow-point", "teepee"],
+    m04: ["lean-to"],
+  };
   it("課題 × 型の総当たりで、達成できる型が 1 つ以上・できない型が 1 つ以上", () => {
     for (const m of missions) {
       const ok = shelters.filter((sh) => missionStatus(completed(sh.id), m, ctx(m.id)).cleared);
@@ -40,7 +47,7 @@ describe("T-031 各課題は型を選ばせる(G-22)", () => {
   it("SPEC §4.9 の表と一致する(達成できるのは表の型だけ)", () => {
     for (const m of missions) {
       const ok = shelters.filter((sh) => missionStatus(completed(sh.id), m, ctx(m.id)).cleared).map((sh) => sh.id);
-      expect(ok, m.id).toEqual([table[m.id]]);
+      expect(ok.sort(), m.id).toEqual([...table[m.id]!].sort());
     }
   });
 });

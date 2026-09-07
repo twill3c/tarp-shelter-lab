@@ -19,11 +19,11 @@ describe("T-035 正解が一意(G-25)", () => {
       expect(r.answerId.length, q.id).toBeGreaterThan(0);
     }
   });
-  it("陽性対照: 無風・無雨は三型とも適性 1.000 で差が付かず、不適格と判定される", () => {
+  it("陽性対照: 無風・無雨は全型とも適性 1.000 で差が付かず、不適格と判定される", () => {
     const flat = { id: "control", prompt: "対照", conditions: { windFrom: 0, windSpeed: 0, rain: 0 as const }, limits: {} };
     const r = evaluateQuestion(flat, shelters);
-    // 前提: 実際に三型とも満点であること(そうでなければ対照になっていない)
-    expect(r.scores.map((s) => Number(s.fitness.toFixed(3)))).toEqual([1, 1, 1]);
+    // 前提: 実際に全型とも満点であること(そうでなければ対照になっていない)
+    expect(r.scores.map((s) => Number(s.fitness.toFixed(3)))).toEqual(shelters.map(() => 1));
     expect(r.margin).toBe(0);
     expect(r.discriminating).toBe(false);
   });
@@ -33,12 +33,14 @@ describe("T-035 正解が一意(G-25)", () => {
 });
 
 describe("T-036 選択肢が死んでいない(G-26)", () => {
+  // 2026-09-07・型 5 種で再実測(SPEC §4.10)
   const table: Record<string, string> = {
     q1: "a-frame",
     q2: "a-frame",
-    q3: "diamond",
+    q3: "plow-point",
     q4: "lean-to",
-    q5: NONE_ID,
+    q5: "teepee",
+    q6: NONE_ID,
   };
   it("SPEC §4.10 の表と一致する", () => {
     for (const q of questions) {
@@ -49,16 +51,23 @@ describe("T-036 選択肢が死んでいない(G-26)", () => {
     const none = questions.filter((q) => evaluateQuestion(q, shelters).answerId === NONE_ID);
     expect(none.length).toBeGreaterThanOrEqual(1);
   });
-  it("どの型も、少なくとも一つの設問で正解になる(死んだ型を置かない)", () => {
+  it("一度も正解にならない型は、SPEC に理由を書いた型だけ", () => {
+    // 型が増えると、モデルの二軸で他に劣る型が出る。**測って認め、理由を書く**のが正しい ——
+    // 「どの型も一度は正解になる」を要求すると、設問を歪めてでも通したくなる。
+    // 2026-09-07 実測: Diamond は鋤先に勾配でも正面投影でも材料でも劣る(SPEC §4.10)
+    const NEVER_WINS = ["diamond"];
     const answers = new Set(questions.map((q) => evaluateQuestion(q, shelters).answerId));
-    for (const sh of shelters) expect(answers.has(sh.id), sh.id).toBe(true);
+    const never = shelters.filter((sh) => !answers.has(sh.id)).map((sh) => sh.id);
+    expect(never.sort()).toEqual([...NEVER_WINS].sort());
   });
   it("材料の上限を超える型は適格でないと印が付く", () => {
+    // q3 はペグ 3 本まで。A-Frame(6 本)は失格、鋤先(3 本)は適格
     const q3 = questions.find((q) => q.id === "q3")!;
     const r = evaluateQuestion(q3, shelters);
     const aframe = r.scores.find((s) => s.shelterId === "a-frame")!;
     expect(aframe.eligible).toBe(false);
-    expect(aframe.reason).toMatch(/ポール/);
+    expect(aframe.reason).toMatch(/ペグ/);
+    expect(r.scores.find((s) => s.shelterId === "plow-point")!.eligible).toBe(true);
   });
 });
 

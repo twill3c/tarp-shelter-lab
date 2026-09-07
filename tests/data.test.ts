@@ -8,10 +8,12 @@ import { findForeignChars } from "../src/hygiene";
 const RAW = readFileSync(new URL("../data/shelters.json", import.meta.url), "utf8");
 const shelters = loadShelters(JSON.parse(RAW));
 
-describe("T-001 三種が読め、ID が一意で、ロープの peg 参照が実在する(F-01 F-13 G-01)", () => {
-  it("ID 集合は SPEC §2 F-01 の三種", () => {
-    // 出所: SPEC §2 F-01(MVP は A-Frame / Lean-To / Diamond の三種)
-    expect(new Set(shelters.map((s) => s.id))).toEqual(new Set(["a-frame", "lean-to", "diamond"]));
+describe("T-001 図鑑が読め、ID が一意で、ロープの peg 参照が実在する(F-01 F-13 G-01)", () => {
+  it("ID 集合が SPEC §2 F-01 と一致する", () => {
+    // 出所: SPEC §2 F-01。MVP の三種に Phase 5 で鋤先とティピーを足した(2026-09-07)
+    expect(new Set(shelters.map((s) => s.id))).toEqual(
+      new Set(["a-frame", "lean-to", "diamond", "plow-point", "teepee"]),
+    );
   });
   it("シェルター ID・部品 ID に重複が無い", () => {
     const ids = shelters.map((s) => s.id);
