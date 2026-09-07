@@ -83,14 +83,31 @@ async function main() {
       if (!f) return null;
       let pos = f;
       while (pos && getComputedStyle(pos).position !== "fixed" && pos !== document.body) pos = pos.parentElement;
-      return { text: f.innerText.replace(/\s+/g, " "), links: f.querySelectorAll("a").length, fixed: pos ? getComputedStyle(pos).position === "fixed" : false };
+      return {
+        text: f.innerText.replace(/\s+/g, " "),
+        links: f.querySelectorAll("a").length,
+        hrefs: [...f.querySelectorAll("a")].map((a) => a.getAttribute("href") ?? ""),
+        fixed: pos ? getComputedStyle(pos).position === "fixed" : false,
+      };
     });
     if (!footer) report("P-04", false, "フッタが見つからない");
     else {
       const iLic = footer.text.indexOf("MIT License");
       const iGh = footer.text.indexOf("GitHub", Math.max(iLic, 0));
       const iMenu = footer.text.lastIndexOf("App Menu");
-      report("P-04", footer.links === 5 && iLic >= 0 && iLic < iGh && iGh < iMenu && footer.fixed, `${footer.links} リンク / fixed ${footer.fixed} / "${footer.text}"`);
+      // 歩き方と設計図はアーティファクトであること。項目数と並びだけでは、
+      // ページ内リンクのままでも通ってしまう
+      const artifactIds = new Set(
+        footer.hrefs.flatMap((h) => {
+          const m = /claude\.ai\/code\/artifact\/([0-9a-f-]{36})/.exec(h);
+          return m ? [m[1]] : [];
+        }),
+      );
+      report(
+        "P-04",
+        footer.links === 5 && iLic >= 0 && iLic < iGh && iGh < iMenu && footer.fixed && artifactIds.size === 2,
+        `${footer.links} リンク / アーティファクト ${artifactIds.size} 本 / fixed ${footer.fixed} / "${footer.text}"`,
+      );
     }
 
     // P-05: 配られた JS が実際に動くか。AUTO は状態機械を一周する

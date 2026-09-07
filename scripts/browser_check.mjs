@@ -450,12 +450,25 @@ async function main() {
       const f = document.querySelector("footer");
       const cs = getComputedStyle(f);
       const text = f.innerText.replace(/\s+/g, " ");
-      return { text, links: [...f.querySelectorAll("a")].length, position: cs.position, bottom: cs.bottom };
+      const hrefs = [...f.querySelectorAll("a")].map((a) => a.getAttribute("href") ?? "");
+      return { text, links: hrefs.length, hrefs, position: cs.position, bottom: cs.bottom };
     });
     const iLic = footer.text.indexOf("MIT License");
     const iGh = footer.text.indexOf("GitHub", Math.max(iLic, 0));
     const iMenu = footer.text.lastIndexOf("App Menu");
-    report("B-06", footer.links === 5 && iLic >= 0 && iLic < iGh && iGh < iMenu && footer.position === "fixed" && footer.bottom === "0px", `links ${footer.links} / ${footer.position} bottom ${footer.bottom} / "${footer.text}"`);
+    // 歩き方と設計図はアーティファクトであること(フリート規約)。
+    // 項目数と並びだけを見ると、ページ内リンクのままでも通ってしまう
+    const artifactIds = new Set(
+      footer.hrefs.flatMap((h) => {
+        const m = /claude\.ai\/code\/artifact\/([0-9a-f-]{36})/.exec(h);
+        return m ? [m[1]] : [];
+      }),
+    );
+    report(
+      "B-06",
+      footer.links === 5 && iLic >= 0 && iLic < iGh && iGh < iMenu && footer.position === "fixed" && footer.bottom === "0px" && artifactIds.size === 2,
+      `links ${footer.links} / アーティファクト ${artifactIds.size} 本 / ${footer.position} bottom ${footer.bottom} / "${footer.text}"`,
+    );
 
     // B-05: 二幅
     let widthOk = true;

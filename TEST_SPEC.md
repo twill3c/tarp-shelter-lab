@@ -96,7 +96,7 @@ scratch に残し、図が読めるかの目視は完了条件に含める(HC-04
 | B-03 | F-03 F-04 F-06 G-10 | A-Frame を Pointer 操作(タップで展開・ポール/ペグをトレイからドラッグ・端からペグへロープを引く)で完成させる。各操作の後に**状態が変わった証拠**(充填済み要素数の増加・段階表示の前進)を確かめる | COMPLETE 表示・スコア表示 | SPEC §4.5 |
 | B-04 | G-10 | シミュレータ SVG の全要素の `getBBox()` が viewBox に収まる。**風速 100% の 6 時点でも測る**(動く矢印を一度も見ないことにならないように)。**陽性対照**: viewBox 外に要素を注入して検査が落ちることを確認 | はみ出し 0・対照は検出 | HC-159 |
 | B-05 | N-02 | 360×740 と 1280×800 で `scrollWidth ≤ clientWidth`、ページ高さ ≤ 16,000px | 二幅とも | HC-078 |
-| B-06 | F-15 G-11 | フッタが 5 つのリンクを持ち、MIT License < GitHub < App Menu の並び、`position: fixed` かつ bottom 0 | 規約どおり | fleet-footer-standard |
+| B-06 | F-15 G-11 | フッタが 5 つのリンクを持ち、MIT License < GitHub < App Menu の並び、`position: fixed` かつ bottom 0、**歩き方と設計図がアーティファクトの URL**(項目数と並びだけではページ内リンクのままでも通る) | 規約どおり | fleet-footer-standard |
 | B-07 | F-13 G-12 | 選択中シェルターの出典欄に data の title・figure・url が出る(三種を切り替えて) | 三種とも一致 | data/shelters.json |
 | B-08 | F-09 | 完成後に再読込するとベストスコアが完成時のスコアと一致して表示される | 一致 | SPEC F-09 |
 | B-09 | F-08 | Lean-To で AUTO を押すと待たずに操作せず COMPLETE に達し、スコアは記録されない | COMPLETE・ベスト未更新 | SPEC §4.6 |
@@ -132,7 +132,7 @@ scratch に残し、図が読めるかの目視は完了条件に含める(HC-04
 | P-01 | N-01 | 本番の `/build-stamp.json` が手元の刻印と一致する。違えば他を見ずに不合格 | 一致 | HC-148 |
 | P-02 | N-01 | 本番のトップが 200 で、`svg#field` が描画される | 200・描画 | SPEC N-01 |
 | P-03 | N-03 | 本番で読み込む全リクエストの host が本番の host だけ | 外部 0 件 | SPEC N-03 |
-| P-04 | F-15 | 本番のフッタが 5 リンク・MIT License < GitHub < App Menu・fixed | 規約どおり | fleet-footer-standard |
+| P-04 | F-15 | 本番のフッタが 5 リンク・MIT License < GitHub < App Menu・fixed・アーティファクト 2 本 | 規約どおり | fleet-footer-standard |
 | P-05 | F-03 F-06 | 本番で AUTO を押すと COMPLETE に達する(配られた JS が実際に動く) | COMPLETE | SPEC §2 F-08 |
 
 刻印の材料は**画面が読むデータ**(`data/shelters.json`)にする。ここが変われば画面の中身が

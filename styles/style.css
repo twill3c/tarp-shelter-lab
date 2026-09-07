@@ -1015,3 +1015,9 @@ footer a {
   stroke-linecap: round;
   stroke-linejoin: round;
 }
+
+.doc-note {
+  font-size: 0.82rem;
+  color: var(--sub);
+  margin: -0.2rem 0 0.6rem;
+}

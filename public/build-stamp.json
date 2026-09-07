@@ -1,10 +1,10 @@
 {
- "stamp": "789af64a1e61ad87",
+ "stamp": "6666821d82ac0d7e",
  "files": [
   {
    "path": "index.html",
-   "bytes": 13399,
-   "sha": "b90b08becd2d"
+   "bytes": 13807,
+   "sha": "ea7b2239d1a7"
   },
   {
    "path": "src/animate.ts",
@@ -123,8 +123,8 @@
   },
   {
    "path": "styles/style.css",
-   "bytes": 16388,
-   "sha": "27338d4bfda7"
+   "bytes": 16474,
+   "sha": "d506f4e4697d"
   },
   {
    "path": "data/knots.json",
