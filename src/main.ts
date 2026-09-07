@@ -93,8 +93,9 @@ async function dispatch(action: Action): Promise<SimEvent | undefined> {
   if (event?.kind === "miss" || event?.kind === "wrong-rope") {
     renderFeedback(event.message, "miss");
   } else if (event?.kind === "complete") {
-    // 見出し(#status)が既に COMPLETE を出すので、ここは同じ文を繰り返さない
-    renderFeedback("RESET でもう一度、または別のシェルターへ", "good");
+    // 見出し(#status)が COMPLETE を、案内(#instruction)が次の行動を出すので、ここは黙る。
+    // 三つが同じことを言うと、どれも読まれなくなる
+    renderFeedback("", "");
   } else {
     // 完成を妨げている理由は、イベントの有無に関わらず出し直す。
     // setPoleHeight のようにイベントを返さない操作でも、画面が古い文を持ち続けないようにする

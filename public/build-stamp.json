@@ -1,6 +1,76 @@
 {
- "stamp": "795e0dce17aa31ab",
+ "stamp": "4707e6f4266877da",
  "files": [
+  {
+   "path": "index.html",
+   "bytes": 7846,
+   "sha": "bae7cd41821f"
+  },
+  {
+   "path": "src/animate.ts",
+   "bytes": 1165,
+   "sha": "677bc504d415"
+  },
+  {
+   "path": "src/auto.ts",
+   "bytes": 925,
+   "sha": "6446f0c734cf"
+  },
+  {
+   "path": "src/geometry.ts",
+   "bytes": 819,
+   "sha": "8e2629a0c666"
+  },
+  {
+   "path": "src/hygiene.ts",
+   "bytes": 1279,
+   "sha": "361e7b677f94"
+  },
+  {
+   "path": "src/judge.ts",
+   "bytes": 2091,
+   "sha": "7cfb14767fb6"
+  },
+  {
+   "path": "src/main.ts",
+   "bytes": 10292,
+   "sha": "b0a78d439a9f"
+  },
+  {
+   "path": "src/model.ts",
+   "bytes": 6627,
+   "sha": "2732e1f49bb1"
+  },
+  {
+   "path": "src/pointer.ts",
+   "bytes": 2045,
+   "sha": "0747f0dc4c13"
+  },
+  {
+   "path": "src/score.ts",
+   "bytes": 845,
+   "sha": "fe8472324a61"
+  },
+  {
+   "path": "src/simulator.ts",
+   "bytes": 10858,
+   "sha": "14407ca55a7a"
+  },
+  {
+   "path": "src/storage.ts",
+   "bytes": 1761,
+   "sha": "ad09a48eadf3"
+  },
+  {
+   "path": "src/view.ts",
+   "bytes": 15637,
+   "sha": "91e9fe2f6b1d"
+  },
+  {
+   "path": "styles/style.css",
+   "bytes": 10469,
+   "sha": "fa8f9daea587"
+  },
   {
    "path": "data/shelters.json",
    "bytes": 10152,

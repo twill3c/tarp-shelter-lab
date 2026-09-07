@@ -11,11 +11,10 @@ const shotDir = join(root, "logs", "shots");
 mkdirSync(shotDir, { recursive: true });
 
 const i = process.argv.indexOf("--url");
-if (i < 0 || !process.argv[i + 1]) {
-  console.error("使い方: node scripts/prod_check.mjs --url https://<本番>/");
-  process.exit(2);
-}
-const base = new URL(process.argv[i + 1].endsWith("/") ? process.argv[i + 1] : process.argv[i + 1] + "/");
+const urlArg = i >= 0 ? process.argv[i + 1] : undefined;
+// 引数が無いときは throw しない —— ESM のトップレベルの例外は終了コードを 1 に固定し、
+// 「検品器自身の異常 = 2」を上書きしてしまう(loop_002 で実測)
+const base = urlArg ? new URL(urlArg.endsWith("/") ? urlArg : urlArg + "/") : null;
 
 const results = [];
 function report(id, ok, detail) {
@@ -38,7 +37,8 @@ async function main() {
   if (!got) {
     console.error(`FAIL P-01 本番の刻印を読めない(${why})`);
     console.error("  → 刻印より前のビルドが配られている。検品は打ち切る");
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
   if (got.stamp !== want.stamp) {
     console.error("FAIL P-01 **本番は手元と違うものを配っている**");
@@ -50,7 +50,8 @@ async function main() {
       else if (g.sha !== f.sha) console.error(`  - ${f.path}: 手元 ${f.bytes}B / 本番 ${g.bytes}B`);
     }
     console.error("  → デプロイが済んでいない。検品の合否はこの本番については語れない");
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
   report("P-01", true, `刻印 ${want.stamp} — 本番は手元と同じものを配っている`);
 
@@ -105,10 +106,18 @@ async function main() {
 
   const failed = results.filter((r) => !r.ok);
   console.log(`\n${results.length} 項目 / 失敗 ${failed.length}`);
-  process.exit(failed.length === 0 ? 0 : 1);
+  process.exitCode = failed.length === 0 ? 0 : 1;
 }
 
-main().catch((e) => {
-  console.error("検品器が停止:", e);
-  process.exit(2);
-});
+// **process.exit を使わない。** fetch の handle が開いたまま呼ぶと Windows の libuv が
+// assertion で abort し、終了コードが 127 になる —— 規約の「不合格 1 / 検品器の異常 2」を
+// 自分で壊すうえ、127 は多くの CI で「コマンドが無い」と読まれる(loop_002 で実測)。
+if (!base) {
+  console.error("使い方: node scripts/prod_check.mjs --url https://<本番>/");
+  process.exitCode = 2;
+} else {
+  main().catch((e) => {
+    console.error("検品器が停止:", e);
+    process.exitCode = 2;
+  });
+}
