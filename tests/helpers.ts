@@ -39,6 +39,7 @@ export function minimalShelter(overrides: Partial<Shelter> = {}): Shelter {
       [200, 100],
       [200, 200],
     ],
+    opening: null,
     poles: [{ id: "p1", x: 200, y: 100, height: { min: 90, ideal: 120, max: 150 } }],
     pegs: [
       { id: "g1", x: 100, y: 220 },

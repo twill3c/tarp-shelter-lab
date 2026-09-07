@@ -53,6 +53,8 @@ export interface Shelter {
   tarp: { folded: Poly; flat: Poly; pitched: Poly; panels: Panel[] };
   /** 稜線(棟)。端点は panels の頂点であること */
   ridge: Poly;
+  /** 開口が向く方位(度・0 = 画面の上)。両側が閉じる型は null(SPEC §4.7) */
+  opening: number | null;
   poles: PoleDef[];
   pegs: PegDef[];
   ropes: RopeDef[];
@@ -113,6 +115,14 @@ function point(v: unknown, path: string): Point {
   return { x: num(o["x"], `${path}.x`), y: num(o["y"], `${path}.y`) };
 }
 
+/** 開口の方位。null か 0 以上 360 未満の数値 */
+function openingOf(v: unknown, path: string): number | null {
+  if (v === null) return null;
+  const n = num(v, path);
+  if (!(n >= 0 && n < 360)) throw new DataError(path, "0 以上 360 未満か null");
+  return n;
+}
+
 export function validateShelter(v: unknown, idx: number): Shelter {
   const p = `[${idx}]`;
   const o = obj(v, p);
@@ -164,6 +174,7 @@ export function validateShelter(v: unknown, idx: number): Shelter {
       }),
     },
     ridge: polyline(o["ridge"], `${id}.ridge`),
+    opening: openingOf(o["opening"], `${id}.opening`),
     poles,
     pegs,
     ropes,

@@ -637,3 +637,124 @@ footer a {
   stroke-linecap: round;
   pointer-events: none;
 }
+
+/* ---- 風 ---- */
+.wind {
+  margin-top: 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 0.6rem 0.8rem;
+  background: #fff;
+}
+
+.wind-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.wind-head h3 {
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+  color: var(--olive);
+  margin: 0;
+}
+
+.verdict {
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  font-size: 0.85rem;
+  padding: 0.05rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+}
+
+.verdict[data-label="STABLE"] {
+  color: var(--ok);
+  border-color: var(--ok);
+}
+
+.verdict[data-label="CAUTION"] {
+  color: var(--warn);
+  border-color: var(--warn);
+}
+
+.verdict[data-label="DANGER"] {
+  color: #fff;
+  background: var(--alert);
+  border-color: var(--alert);
+}
+
+.reason {
+  color: var(--sub);
+  font-size: 0.8rem;
+}
+
+.wind-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.2rem;
+  align-items: center;
+  margin-top: 0.4rem;
+  font-size: 0.8rem;
+  color: var(--sub);
+}
+
+.wind-controls label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.wind-controls select,
+.wind-controls input[type="range"] {
+  font: inherit;
+}
+
+.wind-controls .num {
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  font-weight: 700;
+  min-width: 3.2em;
+}
+
+.gauge.stability .bar {
+  display: inline-block;
+  width: 110px;
+  height: 8px;
+  background: #e3ded0;
+  border-radius: 4px;
+  overflow: hidden;
+  vertical-align: middle;
+  margin: 0 0.35rem;
+}
+
+.gauge.stability .bar i {
+  display: block;
+  height: 100%;
+  background: var(--alert);
+}
+
+.gauge.stability .bar i.CAUTION {
+  background: var(--warn);
+}
+
+.gauge.stability .bar i.STABLE {
+  background: var(--ok);
+}
+
+/* 風の矢印 */
+.windarrow {
+  stroke: #eef3ff;
+  stroke-width: 3;
+  stroke-linecap: round;
+  fill: none;
+  opacity: 0.75;
+  pointer-events: none;
+}
+
+.windarrow.head {
+  fill: #eef3ff;
+  stroke: none;
+}

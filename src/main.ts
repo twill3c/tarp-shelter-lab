@@ -7,6 +7,9 @@ import { TENSION_SLACK_CM } from "./judge";
 import type { Shelter } from "./model";
 import { loadShelters } from "./model";
 import { trackDrag } from "./pointer";
+import type { Wind } from "./wind";
+import { stability } from "./wind";
+import { renderWind, renderWindPanel, swayOffset } from "./windview";
 import { computeScore, rankOf } from "./score";
 import type { Action, SimEvent, SimState } from "./simulator";
 import { blockers, initialState, isComplete, nextTarget, reduce } from "./simulator";
@@ -42,9 +45,10 @@ interface App {
   /** AUTO 再生中はスコアを記録しない(SPEC §4.6) */
   auto: boolean;
   lastScore: { score: number; rank: string; seconds: number; mistakes: number; hints: number } | null;
+  wind: Wind;
 }
 
-const app: App = { state: initialState(shelters[0]!), hint: null, busy: false, auto: false, lastScore: null };
+const app: App = { state: initialState(shelters[0]!), hint: null, busy: false, auto: false, lastScore: null, wind: { windFrom: 0, speed: 0 } };
 
 function svg(): SVGSVGElement {
   const el = document.querySelector<SVGSVGElement>("svg#field");
@@ -71,6 +75,7 @@ function render(tarpOverride?: Point[] | undefined): void {
   const b = bests();
   renderShelterList(shelters, s.shelter.id, b, selectShelter);
   renderScore(app.lastScore, b[s.shelter.id] ?? null, app.auto ? "AUTO 再生の記録は保存しません" : "ベストスコアはこの端末にだけ保存されます");
+  renderWindPanel(s, app.wind);
   for (const id of ["btn-hint", "btn-auto"]) {
     const btn = document.querySelector<HTMLButtonElement>(`#${id}`);
     if (btn) btn.disabled = app.busy || isComplete(s);
@@ -233,11 +238,16 @@ async function runAuto(): Promise<void> {
   app.lastScore = null;
   render();
   const plan = autoPlan(app.state.shelter, performance.now());
+  // autoPlan は一般の手順として末尾に releasePeg を並べるが、目標どおりに置いた再生では
+  // 張力が既に 100 なので何も変えない。完成した時点で打ち切る
   for (const action of plan) {
     app.busy = false; // dispatch 内のアニメーションに任せる
     await dispatch({ ...action, ...(("now" in action) ? { now: performance.now() } : {}) } as Action);
     app.busy = true;
     render();
+    // 完成を検めるのは**待つ前**。待ってから抜けると、画面が COMPLETE を出したまま
+    // 操作を捨てる時間が残る
+    if (isComplete(app.state)) break;
     await sleep(220);
   }
   app.busy = false;
@@ -265,8 +275,16 @@ function onHint(): void {
   });
 }
 
-function tick(): void {
-  renderTimer(app.state, performance.now());
+function tick(now: number): void {
+  renderTimer(app.state, now);
+  // 矢印は流れ、タープは風下へ揺れる。周期 2.4 秒
+  const phase = (now / 2400) % 1;
+  renderWind(app.state, app.wind, phase);
+  const field = document.querySelector<SVGGElement>("#layer-tarp");
+  if (field) {
+    const { dx, dy } = swayOffset(app.wind, stability(app.state, app.wind), phase);
+    field.setAttribute("transform", dx === 0 && dy === 0 ? "" : `translate(${dx.toFixed(2)} ${dy.toFixed(2)})`);
+  }
   requestAnimationFrame(tick);
 }
 
@@ -286,6 +304,19 @@ function boot(): void {
   });
   document.querySelector("#btn-hint")?.addEventListener("click", onHint);
   document.querySelector("#btn-auto")?.addEventListener("click", () => void runAuto());
+
+  const dir = document.querySelector<HTMLSelectElement>("#wind-dir");
+  dir?.addEventListener("change", () => {
+    app.wind = { ...app.wind, windFrom: Number(dir.value) };
+    render();
+  });
+  const speed = document.querySelector<HTMLInputElement>("#wind-speed");
+  speed?.addEventListener("input", () => {
+    app.wind = { ...app.wind, speed: Number(speed.value) };
+    const out = document.querySelector("#wind-speed-val");
+    if (out) out.textContent = `${speed.value}%`;
+    render();
+  });
   requestAnimationFrame(tick);
 }
 

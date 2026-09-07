@@ -51,6 +51,7 @@
             <g id="layer-targets"></g>
             <g id="layer-tarp"></g>
             <g id="layer-parts"></g>
+            <g id="layer-wind"></g>
             <g id="layer-labels"></g>
             <g id="layer-drag"></g>
           </svg>
@@ -67,6 +68,33 @@
         <ol id="steps" class="steps"></ol>
         <p id="instruction" class="instruction"></p>
         <p id="feedback" class="feedback" aria-live="polite"></p>
+
+        <section id="wind" class="wind">
+          <div class="wind-head">
+            <h3>WIND</h3>
+            <span id="wind-verdict" class="verdict" data-label="">—</span>
+            <span id="wind-reason" class="reason"></span>
+          </div>
+          <div class="wind-controls">
+            <label>風向
+              <select id="wind-dir">
+                <option value="0">↓ 北から</option>
+                <option value="45">↙ 北東から</option>
+                <option value="90">← 東から</option>
+                <option value="135">↖ 南東から</option>
+                <option value="180">↑ 南から</option>
+                <option value="225">↗ 南西から</option>
+                <option value="270">→ 西から</option>
+                <option value="315">↘ 北西から</option>
+              </select>
+            </label>
+            <label>風速
+              <input type="range" id="wind-speed" min="0" max="100" step="5" value="0" />
+              <span id="wind-speed-val" class="num">0%</span>
+            </label>
+            <span class="gauge stability">安定度<span class="bar"><i id="wind-bar"></i></span><span id="wind-value" class="num">—</span></span>
+          </div>
+        </section>
 
         <div id="controls" class="controls">
           <div id="heights" class="heights"></div>
@@ -120,6 +148,7 @@
         <li>完成の六条件: 展開・全ポール・全ペグ・全ロープが正しいペグ・全張力 ≥ 70・全ポール高さが範囲内。</li>
         <li>スコア = 1000 − max(0, 秒 − 30) × 5 − ミス × 60 − ヒント × 40。S ≥ 900 / A ≥ 750 / B ≥ 550 / C ≥ 350 / D。</li>
         <li>判定・張力・スコアは UI から独立した純関数で、単体テストが守る。画面の幾何と操作は実ブラウザで別に検品する。</li>
+        <li>風は完全な空力ではなく、向きと張力が効くことが分かる近似。荷重 = 動圧(風速の二乗)× 抗力係数 × 正面投影面積で、開口が風上を向くと係数が上がる。安定度 = 平均張力 − 荷重。</li>
         <li>原図は転載せず、FM 3-05.70(旧 FM 21-76)第 5 章の構成を自作 SVG に読み替えている。出典と権利は左の ORIGINAL 欄。</li>
       </ul>
       <p class="disclaimer">本アプリは教育・シミュレーション目的であり、実際の野外活動の安全性を保証しない。実際の設営では現地の天候・地形・地盤・用具の仕様・製造者の説明書・現地の規則・最新の安全情報を優先すること。</p>

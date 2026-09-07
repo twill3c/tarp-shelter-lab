@@ -44,6 +44,11 @@ const GATES = {
   "B-08": "F-09",
   "B-09": "F-08",
   "B-10": "F-12",
+  "B-11": "G-16",
+  "B-12": "G-17",
+  "B-13": "F-17",
+  "B-14": "F-08",
+  "B-15": "F-17",
 };
 
 const results = [];
@@ -171,9 +176,24 @@ async function main() {
     report("B-03", reached && status.includes("SHELTER COMPLETE") && Number.isFinite(score), `到達 ${reached} / status "${status}" / score ${scoreText}`);
     await page.screenshot({ path: join(shotDir, "aframe-complete-1280.png"), fullPage: true });
 
-    // B-04: 完成状態の幾何
+    // B-04: 完成状態の幾何。**風ありでも測る** —— 矢印はフィールドを横切って動くので、
+    // 風速 0 のときだけ見ていると、動く要素のはみ出しを一度も検査しないことになる
     const over = await overflowing(page);
-    report("B-04", over.length === 0, `はみ出し ${over.length} 件 ${over.slice(0, 3).join(" | ")}`);
+    const windSpeed = page.locator("#wind-speed");
+    await windSpeed.fill("100");
+    await windSpeed.dispatchEvent("input");
+    const overWind = [];
+    let arrowsSeen = 0;
+    for (let k = 0; k < 6; k++) {
+      await page.waitForTimeout(220);
+      arrowsSeen = Math.max(arrowsSeen, await count(page, "path.windarrow"));
+      overWind.push(...(await overflowing(page)));
+    }
+    await windSpeed.fill("0");
+    await windSpeed.dispatchEvent("input");
+    await page.waitForTimeout(120);
+    const all = [...over, ...overWind];
+    report("B-04", all.length === 0 && arrowsSeen > 0, `はみ出し ${all.length} 件(風あり 6 時点・矢印 最大 ${arrowsSeen} 本)${all.slice(0, 3).join(" | ")}`);
 
     // B-10: ポール高さ
     const slider = page.locator('input.pole-height[data-pole="p1"]');
@@ -188,6 +208,53 @@ async function main() {
     await page.waitForTimeout(100);
     const statusBack = (await page.locator("#status").innerText()).trim();
     report("B-10", fbHigh.includes("居住空間 HIGH") && !statusHigh.includes("COMPLETE") && statusBack.includes("COMPLETE"), `HIGH: "${fbHigh}" / 戻し: "${statusBack}"`);
+
+    // B-11 / B-12: 風。完成状態で測る
+    const arrows0 = await count(page, "path.windarrow");
+    const speed = page.locator("#wind-speed");
+    await speed.fill("70");
+    await speed.dispatchEvent("input");
+    await page.waitForTimeout(120);
+    const arrows70 = await count(page, "path.windarrow");
+    // 風向は select。A-Frame の棟は y 方向なので 0(北から)が棟に沿う
+    const dir = page.locator("#wind-dir");
+    await dir.selectOption("90");
+    await page.waitForTimeout(120);
+    const across = Number(await page.locator("#wind-value").innerText());
+    const labelAcross = await page.locator("#wind-verdict").getAttribute("data-label");
+    await dir.selectOption("0");
+    await page.waitForTimeout(120);
+    const along = Number(await page.locator("#wind-value").innerText());
+    await speed.fill("0");
+    await speed.dispatchEvent("input");
+    await page.waitForTimeout(120);
+    const arrowsBack = await count(page, "path.windarrow");
+    report("B-11", arrows0 === 0 && arrows70 > 0 && arrowsBack === 0, `矢印 0→${arrows70}→${arrowsBack}`);
+    report("B-12", Number.isFinite(across) && Number.isFinite(along) && along > across, `直交 ${across}(${labelAcross}) < 棟に沿う ${along}`);
+
+    // B-15: 揺れが実際に起きている証拠を残す(HC-071: 狙った状況が一度でも起きたかを測る)。
+    // 風速 0 では変換が無く、風があると時間とともに変わること
+    await speed.fill("0");
+    await speed.dispatchEvent("input");
+    await page.waitForTimeout(150);
+    const swayOff = await page.evaluate(() => document.querySelector("#layer-tarp")?.getAttribute("transform") ?? "");
+    await speed.fill("90");
+    await speed.dispatchEvent("input");
+    const seen = new Set();
+    for (let k = 0; k < 8; k++) {
+      await page.waitForTimeout(140);
+      seen.add(await page.evaluate(() => document.querySelector("#layer-tarp")?.getAttribute("transform") ?? ""));
+    }
+    await speed.fill("0");
+    await speed.dispatchEvent("input");
+    await page.waitForTimeout(150);
+    report("B-15", swayOff === "" && seen.size >= 3, `無風の変換 "${swayOff}" / 風ありの異なる変換 ${seen.size} 種`);
+
+    // B-13: 張る前は判定を出さない
+    await page.click("#btn-reset");
+    await page.waitForTimeout(150);
+    const beforeRopes = (await page.locator("#wind-verdict").innerText()).trim();
+    report("B-13", beforeRopes === "—", `結ぶ前の判定 "${beforeRopes}"`);
 
     // B-08: 再読込後のベスト
     await page.reload({ waitUntil: "networkidle" });
@@ -216,6 +283,14 @@ async function main() {
     await page.waitForFunction(() => document.querySelector("#status")?.textContent?.includes("SHELTER COMPLETE"), null, { timeout: 30000 });
     const bestAfter = (await page.locator('[data-best="lean-to"]').innerText()).trim();
     report("B-09", bestBefore === bestAfter, `AUTO 完成・best "${bestBefore}" → "${bestAfter}"`);
+
+    // B-14: AUTO が終わったら操作を受け付ける。**完成表示の直後に押せること**を測る ——
+    // 再生が裏で続いていると、画面は COMPLETE なのに操作が黙って捨てられる
+    await page.click('#shelter-list button[data-shelter="diamond"]');
+    await page.waitForTimeout(250);
+    const switched = await page.locator('#shelter-list button[aria-pressed="true"]').getAttribute("data-shelter");
+    const stepNow = await page.locator("#steps li.active").getAttribute("data-step");
+    report("B-14", switched === "diamond" && stepNow === "unfold", `切替後 ${switched} / 段階 ${stepNow}`);
     await page.screenshot({ path: join(shotDir, "leanto-auto-1280.png"), fullPage: true });
 
     // B-06: フッタ
