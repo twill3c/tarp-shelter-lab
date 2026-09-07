@@ -902,3 +902,116 @@ footer a {
   font-weight: 700;
   margin: 0.2rem 0;
 }
+
+/* ---- ロープワーク ---- */
+.knot-note {
+  font-size: 0.82rem;
+  color: var(--sub);
+  margin: 0.2rem 0 0.6rem;
+}
+
+.knot-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.7rem;
+}
+
+.knot-tabs button {
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.knot-tabs button[aria-pressed="true"] {
+  background: var(--olive);
+  border-color: var(--olive);
+  color: #fff;
+}
+
+.knot-body {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 0.8rem;
+}
+
+.knot-step {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0.5rem;
+  background: #fff;
+}
+
+.knot-step svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  background: #f7f3e8;
+  border-radius: 6px;
+}
+
+.knot-step p {
+  margin: 0.4rem 0 0;
+  font-size: 0.8rem;
+}
+
+.knot-step .num {
+  font-weight: 700;
+  color: var(--olive);
+  margin-right: 0.3rem;
+}
+
+.knot-use {
+  font-size: 0.85rem;
+  margin: 0 0 0.5rem;
+}
+
+.knot-source {
+  font-size: 0.78rem;
+  color: var(--sub);
+  border-top: 1px dashed var(--line);
+  padding-top: 0.5rem;
+  margin-top: 0.8rem;
+}
+
+.strand-pole {
+  stroke: #7a6330;
+  stroke-width: 9;
+  fill: none;
+  stroke-linecap: round;
+}
+
+.strand-rope {
+  stroke: #4f5b36;
+  stroke-width: 5;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.strand-tail {
+  stroke: #a33a2a;
+  stroke-width: 5;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.crossing-gap {
+  stroke: #f7f3e8;
+  fill: none;
+  stroke-linecap: butt;
+}
+
+.strand-line {
+  stroke: #4f5b36;
+  stroke-width: 7;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}

@@ -58,6 +58,8 @@ const GATES = {
   "B-22": "G-25",
   "B-23": "F-20",
   "B-24": "F-20",
+  "B-25": "G-28",
+  "B-26": "F-21",
 };
 
 const results = [];
@@ -367,6 +369,36 @@ async function main() {
     const secondPrompt = (await page.locator("#quiz-prompt").innerText()).trim();
     const quizScoreText = (await page.locator("#quiz-score").innerText()).trim();
     report("B-24", secondPrompt !== firstPrompt && /1 問中/.test(quizScoreText), `設問が変わった ${secondPrompt !== firstPrompt} / 得点 "${quizScoreText}" / 初回の正解 ${answerId}`);
+
+    // B-25 / B-26: ロープワーク
+    const knotTabs = await count(page, "#knot-tabs button");
+    const firstKnot = (await page.locator("#knot-source").innerText()).trim();
+    // 図の要素が viewBox に収まっているか(結び方の図は独立した svg なので個別に測る)
+    const knotOverflow = await page.evaluate(() => {
+      const out = [];
+      for (const svg of document.querySelectorAll("#knot-body svg")) {
+        const vb = svg.viewBox.baseVal;
+        for (const el of svg.querySelectorAll("path")) {
+          const b = el.getBBox();
+          if (b.x < vb.x - 6 || b.y < vb.y - 6 || b.x + b.width > vb.x + vb.width + 6 || b.y + b.height > vb.y + vb.height + 6) {
+            out.push(`${el.getAttribute("class")} ${[b.x, b.y, b.width, b.height].map((v) => v.toFixed(1)).join(",")}`);
+          }
+        }
+      }
+      return out;
+    });
+    await page.click("#knot-tabs button:nth-child(2)");
+    await page.waitForTimeout(150);
+    const secondKnot = (await page.locator("#knot-source").innerText()).trim();
+    report("B-25", knotTabs >= 2 && knotOverflow.length === 0 && secondKnot !== firstKnot, `タブ ${knotTabs} / はみ出し ${knotOverflow.length} 件 ${knotOverflow.slice(0, 2).join(" | ")} / 切替 ${secondKnot !== firstKnot}`);
+
+    const steps = await count(page, ".knot-step");
+    const withSvg = await count(page, ".knot-step svg");
+    const withText = await page.evaluate(() =>
+      [...document.querySelectorAll(".knot-step p")].filter((p) => (p.textContent ?? "").trim().length > 8).length,
+    );
+    const noteText = (await page.locator(".knot-note").innerText()).trim();
+    report("B-26", steps >= 3 && withSvg === steps && withText === steps && /模式図/.test(noteText) && secondKnot.startsWith("出典"), `ステップ ${steps} / 図 ${withSvg} / 文 ${withText} / 注記 ${/模式図/.test(noteText)}`);
 
     // B-13: 張る前は判定を出さない
     await page.click("#btn-reset");

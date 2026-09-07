@@ -1,10 +1,10 @@
 {
- "stamp": "457d0ea9ab978456",
+ "stamp": "4f410b1717690db9",
  "files": [
   {
    "path": "index.html",
-   "bytes": 12280,
-   "sha": "8d17346733b4"
+   "bytes": 13110,
+   "sha": "3b3431c86b92"
   },
   {
    "path": "src/animate.ts",
@@ -32,9 +32,19 @@
    "sha": "7cfb14767fb6"
   },
   {
+   "path": "src/knots.ts",
+   "bytes": 7396,
+   "sha": "13850cc62f26"
+  },
+  {
+   "path": "src/knotsview.ts",
+   "bytes": 4204,
+   "sha": "1e53a63a18b8"
+  },
+  {
    "path": "src/main.ts",
-   "bytes": 16295,
-   "sha": "5c52e55b00e5"
+   "bytes": 16608,
+   "sha": "b819da18dfc2"
   },
   {
    "path": "src/mission.ts",
@@ -108,8 +118,13 @@
   },
   {
    "path": "styles/style.css",
-   "bytes": 14632,
-   "sha": "4c74edf44b30"
+   "bytes": 16388,
+   "sha": "27338d4bfda7"
+  },
+  {
+   "path": "data/knots.json",
+   "bytes": 18626,
+   "sha": "d128578debfd"
   },
   {
    "path": "data/missions.json",

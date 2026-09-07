@@ -26,6 +26,19 @@ const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1000, height: 900 } });
 await page.goto(base, { waitUntil: "networkidle" });
 
+if (process.argv.includes("--knots")) {
+  for (let i = 1; i <= 3; i++) {
+    await page.click(`#knot-tabs button:nth-child(${i})`);
+    await page.waitForTimeout(200);
+    const name = (await page.locator(`#knot-tabs button:nth-child(${i})`).innerText()).trim();
+    console.log(`${i}: ${name}`);
+    await page.locator("section.knots").screenshot({ path: join(shots, `knot-${i}.png`) });
+  }
+  await browser.close();
+  srv.close();
+  process.exit(0);
+}
+
 if (process.argv.includes("--quiz")) {
   for (let k = 0; k < 5; k++) {
     const prompt = (await page.locator("#quiz-prompt").innerText()).trim();
