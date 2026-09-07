@@ -22,6 +22,7 @@ const testText = [
     .filter((f) => f.endsWith(".ts"))
     .map((f) => readFileSync(join(testDir, f), "utf8")),
   readFileSync(join(root, "scripts", "browser_check.mjs"), "utf8"),
+  readFileSync(join(root, "scripts", "prod_check.mjs"), "utf8"),
 ].join("\n");
 
 let bad = 0;

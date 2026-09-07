@@ -16,10 +16,13 @@ const urlArg = i >= 0 ? process.argv[i + 1] : undefined;
 // 「検品器自身の異常 = 2」を上書きしてしまう(loop_002 で実測)
 const base = urlArg ? new URL(urlArg.endsWith("/") ? urlArg : urlArg + "/") : null;
 
+// 各ケースが確かめる品質ゲート(SPEC §6)。check_gates.mjs がこの対応を数える(HC-157)
+const GATES = { "P-01": "G-14", "P-02": "G-15", "P-03": "G-15", "P-04": "G-15", "P-05": "G-15" };
+
 const results = [];
 function report(id, ok, detail) {
   results.push({ id, ok });
-  console.log(`${ok ? "PASS" : "FAIL"} ${id} ${detail}`);
+  console.log(`${ok ? "PASS" : "FAIL"} ${id} [${GATES[id] ?? "-"}] ${detail}`);
 }
 
 async function main() {
@@ -35,13 +38,13 @@ async function main() {
     why = String(e);
   }
   if (!got) {
-    console.error(`FAIL P-01 本番の刻印を読めない(${why})`);
+    console.error(`FAIL P-01 [G-14] 本番の刻印を読めない(${why})`);
     console.error("  → 刻印より前のビルドが配られている。検品は打ち切る");
     process.exitCode = 1;
     return;
   }
   if (got.stamp !== want.stamp) {
-    console.error("FAIL P-01 **本番は手元と違うものを配っている**");
+    console.error("FAIL P-01 [G-14] **本番は手元と違うものを配っている**");
     console.error(`  手元 ${want.stamp} / 本番 ${got.stamp}`);
     const byPath = new Map((got.files ?? []).map((f) => [f.path, f]));
     for (const f of want.files) {

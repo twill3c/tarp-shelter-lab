@@ -10,9 +10,9 @@
 |---|---|---|
 | L0 | 足場・SPEC・データ三種(A-Frame / Lean-To / Diamond)・判定/張力/完成/スコア/保存の純粋ロジックとテスト | 完了 |
 | L1 | SVG シミュレータ UI・ドラッグ・AUTO・HINT・フッタ・出典表示・ビルド・実ブラウザ検品 | 完了 |
-| L2 | Vercel 公開・app-menu 掲載 | 未着手 |
+| L2 | Vercel 公開・app-menu 掲載・ビルド刻印つき本番検品 | 完了 |
 
-デモ URL: 未公開。
+デモ URL: https://tarp-shelter-lab.vercel.app
 
 ## 遊び方
 
@@ -41,11 +41,18 @@ npm run dev            # 開発サーバ
 npm run build          # 出荷ビルド(tsc --noEmit → vite build → dist/)
 npm run verify         # 型検査 → 単体テスト → ゲート対応検査 → ビルド → 実ブラウザ検品
 npm run check:browser  # 実ブラウザ検品だけ(dist/ が要る)
+npm run deploy         # Vercel 本番へ
+npm run check:prod -- --url https://tarp-shelter-lab.vercel.app/   # 本番検品
 ```
 
 `npm run verify` は五つを順に通す。実ブラウザ検品は `dist/` を手元の静的サーバから配り、
 Playwright(chromium)で実際にドラッグして完成させ、図の幾何・二つの画面幅・フッタ規約・
 外部読込の不在まで測る。スクリーンショットは `logs/shots/` に残る。
+
+本番検品は別物で、**配られているものが手元と同じか**を先に見る。ビルド時に
+配信物を決める入力(`index.html` / `src` / `styles` / `data`)から刻印を作って
+`build-stamp.json` に置き、検品はまずそれを引いて突き合わせる。違えば他を一切見ずに止める。
+本番が健やかかと、本番が新しいかは別の問いだからである。
 
 ループの記録は `logs/loops/*.jsonl`(`python harness/looplog.py summary --loop loop_000`)。
 
