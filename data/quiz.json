@@ -1,0 +1,59 @@
+{
+  "$comment": "設問は状況だけを持つ。正解はモデルから導く(SPEC §4.10)。適性は 2026-09-07 に実測して差が付くことを確かめた。",
+  "questions": [
+    {
+      "id": "q1",
+      "prompt": "土砂降りの雨。風はほとんど無い。どの型を張るか。",
+      "conditions": {
+        "windFrom": 0,
+        "windSpeed": 0,
+        "rain": 3
+      },
+      "limits": {}
+    },
+    {
+      "id": "q2",
+      "prompt": "北から強い風が吹いている。雨は降っていない。どの型を張るか。",
+      "conditions": {
+        "windFrom": 0,
+        "windSpeed": 70,
+        "rain": 0
+      },
+      "limits": {}
+    },
+    {
+      "id": "q3",
+      "prompt": "ポールが 1 本しかない。天候は穏やか。どの型なら張れるか。",
+      "conditions": {
+        "windFrom": 0,
+        "windSpeed": 0,
+        "rain": 0
+      },
+      "limits": {
+        "poles": 1
+      }
+    },
+    {
+      "id": "q4",
+      "prompt": "ペグは 4 本だけ。北からそこそこの風が吹く。どの型を張るか。",
+      "conditions": {
+        "windFrom": 0,
+        "windSpeed": 55,
+        "rain": 0
+      },
+      "limits": {
+        "pegs": 4
+      }
+    },
+    {
+      "id": "q5",
+      "prompt": "東から猛烈な横風、しかも土砂降り。どの型を張るか。",
+      "conditions": {
+        "windFrom": 90,
+        "windSpeed": 100,
+        "rain": 3
+      },
+      "limits": {}
+    }
+  ]
+}

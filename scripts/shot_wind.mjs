@@ -26,6 +26,24 @@ const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1000, height: 900 } });
 await page.goto(base, { waitUntil: "networkidle" });
 
+if (process.argv.includes("--quiz")) {
+  for (let k = 0; k < 5; k++) {
+    const prompt = (await page.locator("#quiz-prompt").innerText()).trim();
+    await page.click('#quiz-choices button[data-choice="a-frame"]');
+    await page.waitForTimeout(150);
+    const v = (await page.locator("#quiz-verdict").innerText()).trim();
+    const rows = await page.locator("#quiz-detail li").allInnerTexts();
+    console.log(`${prompt} => ${v}`);
+    for (const r of rows) console.log("   ", r.replace(/\s+/g, " "));
+    if (k === 4) await page.locator("section.quiz").screenshot({ path: join(shots, "quiz.png") });
+    await page.click("#quiz-next");
+    await page.waitForTimeout(120);
+  }
+  await browser.close();
+  srv.close();
+  process.exit(0);
+}
+
 if (process.argv.includes("--mission")) {
   for (const [mid, shelter] of [["m03", "a-frame"], ["m03", "diamond"], ["m01", "lean-to"]]) {
     await page.locator("#mission-select").selectOption(mid);

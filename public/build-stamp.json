@@ -1,10 +1,10 @@
 {
- "stamp": "bd3f3b12727debab",
+ "stamp": "457d0ea9ab978456",
  "files": [
   {
    "path": "index.html",
-   "bytes": 11495,
-   "sha": "bd1e8a59dbf9"
+   "bytes": 12280,
+   "sha": "8d17346733b4"
   },
   {
    "path": "src/animate.ts",
@@ -33,8 +33,8 @@
   },
   {
    "path": "src/main.ts",
-   "bytes": 15390,
-   "sha": "242457291c45"
+   "bytes": 16295,
+   "sha": "5c52e55b00e5"
   },
   {
    "path": "src/mission.ts",
@@ -55,6 +55,16 @@
    "path": "src/pointer.ts",
    "bytes": 2045,
    "sha": "0747f0dc4c13"
+  },
+  {
+   "path": "src/quiz.ts",
+   "bytes": 6256,
+   "sha": "a189a8567f27"
+  },
+  {
+   "path": "src/quizview.ts",
+   "bytes": 4147,
+   "sha": "8e75ba36791c"
   },
   {
    "path": "src/rain.ts",
@@ -98,13 +108,18 @@
   },
   {
    "path": "styles/style.css",
-   "bytes": 13825,
-   "sha": "9a4511a4834d"
+   "bytes": 14632,
+   "sha": "4c74edf44b30"
   },
   {
    "path": "data/missions.json",
    "bytes": 1922,
    "sha": "7bfcb5e4706e"
+  },
+  {
+   "path": "data/quiz.json",
+   "bytes": 1487,
+   "sha": "e699939a1d75"
   },
   {
    "path": "data/shelters.json",

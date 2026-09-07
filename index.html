@@ -159,6 +159,18 @@
       </section>
     </main>
 
+    <section class="panel quiz" id="quiz">
+      <h2>QUIZ — この状況ならどの型を選ぶ?</h2>
+      <p id="quiz-prompt" class="quiz-prompt"></p>
+      <div id="quiz-choices" class="quiz-choices"></div>
+      <p id="quiz-verdict" class="quiz-verdict" aria-live="polite"></p>
+      <ul id="quiz-detail" class="checks"></ul>
+      <div class="buttons">
+        <button type="button" id="quiz-next">次の問題</button>
+        <span id="quiz-score" class="reason"></span>
+      </div>
+    </section>
+
     <section class="panel notes" id="notes">
       <h2>この張り方の要点</h2>
       <ul id="notes-list"></ul>
@@ -186,6 +198,7 @@
         <li>完成の六条件: 展開・全ポール・全ペグ・全ロープが正しいペグ・全張力 ≥ 70・全ポール高さが範囲内。</li>
         <li>スコア = 1000 − max(0, 秒 − 30) × 5 − ミス × 60 − ヒント × 40。S ≥ 900 / A ≥ 750 / B ≥ 550 / C ≥ 350 / D。</li>
         <li>判定・張力・スコアは UI から独立した純関数で、単体テストが守る。画面の幾何と操作は実ブラウザで別に検品する。</li>
+        <li>クイズの正解は書いていない。状況ごとに各型の適性(安定度と溜まりのうち低いほう)を計算して決めるので、シミュレータと食い違わない。そのぶんクイズはモデルの外のことを問えない。</li>
         <li>課題(MISSION)は判定できる述語の集まり。材料の上限・天候・時間を課し、満たしていない項目を必ず並べて出す。どの課題も、達成できる型とできない型が必ずある。</li>
         <li>雨は勾配と張りだけで見る。屋根面の水平距離から勾配を出し、最も寝ている面が排水を決める。排水度 = 勾配(45 度で満点)× 平均張力。溜まり = 雨量 − 排水度。</li>
         <li>風は完全な空力ではなく、向きと張力が効くことが分かる近似。荷重 = 動圧(風速の二乗)× 抗力係数 × 正面投影面積で、開口が風上を向くと係数が上がる。安定度 = 平均張力 − 荷重。</li>

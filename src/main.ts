@@ -1,6 +1,7 @@
 // 画面の主制御。状態は SimState 一つ。描画は状態から毎回作り直す。
 import raw from "../data/shelters.json";
 import missionRaw from "../data/missions.json";
+import quizRaw from "../data/quiz.json";
 import { morphPoly, sleep } from "./animate";
 import { autoPlan } from "./auto";
 import type { Point } from "./geometry";
@@ -17,6 +18,9 @@ import { renderRain, renderRainPanel } from "./rainview";
 import type { Mission } from "./mission";
 import { clearedIds, loadMissions, recordClear } from "./mission";
 import { renderMissionList, renderMissionPanel } from "./missionview";
+import { evaluateQuestion, loadQuiz } from "./quiz";
+import type { QuizState } from "./quizview";
+import { renderQuiz } from "./quizview";
 import { standingHeight } from "./wind";
 import { computeScore, rankOf } from "./score";
 import type { Action, SimEvent, SimState } from "./simulator";
@@ -41,6 +45,7 @@ import {
 
 const shelters = loadShelters(raw);
 const missions = loadMissions(missionRaw);
+const questions = loadQuiz(quizRaw);
 
 const storage: StorageLike = {
   getItem: (k) => window.localStorage.getItem(k),
@@ -57,12 +62,13 @@ interface App {
   wind: Wind;
   rain: RainRate;
   mission: Mission | null;
+  quiz: QuizState;
   /** 溜まりは時間で緩和する見せ方の量。判定そのものではない */
   pool: number;
   lastTick: number;
 }
 
-const app: App = { state: initialState(shelters[0]!), hint: null, busy: false, auto: false, lastScore: null, wind: { windFrom: 0, speed: 0 }, rain: 0, pool: 0, lastTick: 0, mission: null };
+const app: App = { state: initialState(shelters[0]!), hint: null, busy: false, auto: false, lastScore: null, wind: { windFrom: 0, speed: 0 }, rain: 0, pool: 0, lastTick: 0, mission: null, quiz: { index: 0, answered: null, correct: 0, asked: 0 } };
 
 function svg(): SVGSVGElement {
   const el = document.querySelector<SVGSVGElement>("svg#field");
@@ -349,8 +355,26 @@ function tick(now: number): void {
   requestAnimationFrame(tick);
 }
 
+function drawQuiz(): void {
+  renderQuiz(questions, shelters, app.quiz, onQuizAnswer, onQuizNext);
+}
+
+function onQuizAnswer(choiceId: string): void {
+  if (app.quiz.answered !== null) return;
+  const question = questions[app.quiz.index % questions.length]!;
+  const correct = evaluateQuestion(question, shelters).answerId === choiceId;
+  app.quiz = { ...app.quiz, answered: choiceId, asked: app.quiz.asked + 1, correct: app.quiz.correct + (correct ? 1 : 0) };
+  drawQuiz();
+}
+
+function onQuizNext(): void {
+  app.quiz = { ...app.quiz, index: app.quiz.index + 1, answered: null };
+  drawQuiz();
+}
+
 function boot(): void {
   startShelter(shelters[0]!);
+  drawQuiz();
   const s = svg();
   s.addEventListener("pointerdown", onFieldDown, { passive: false });
   for (const part of ["pole", "peg"] as const) {

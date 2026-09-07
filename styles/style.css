@@ -853,3 +853,52 @@ footer a {
   opacity: 0.55;
   cursor: not-allowed;
 }
+
+/* ---- クイズ ---- */
+.quiz-prompt {
+  font-weight: 700;
+  margin: 0.2rem 0 0.6rem;
+}
+
+.quiz-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+}
+
+.quiz-choices button {
+  font: inherit;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--olive);
+  background: #fff;
+  color: var(--olive);
+  cursor: pointer;
+}
+
+.quiz-choices button[data-state="correct"] {
+  background: var(--ok);
+  border-color: var(--ok);
+  color: #fff;
+}
+
+.quiz-choices button[data-state="wrong"] {
+  background: var(--alert);
+  border-color: var(--alert);
+  color: #fff;
+}
+
+.quiz-choices button[data-state="answer"] {
+  border-width: 3px;
+}
+
+.quiz-choices button:disabled {
+  cursor: default;
+}
+
+.quiz-verdict {
+  min-height: 1.4em;
+  font-weight: 700;
+  margin: 0.2rem 0;
+}

@@ -55,6 +55,9 @@ const GATES = {
   "B-19": "G-22",
   "B-20": "G-23",
   "B-21": "G-24",
+  "B-22": "G-25",
+  "B-23": "F-20",
+  "B-24": "F-20",
 };
 
 const results = [];
@@ -337,6 +340,33 @@ async function main() {
     report("B-21", missionVerdict === "CLEAR" && optionText.startsWith("済"), `判定 ${missionVerdict} / 一覧 "${optionText.trim()}"`);
     await page.locator("#mission-select").selectOption("");
     await page.waitForTimeout(150);
+
+    // B-22 / B-23 / B-24: クイズ
+    const firstPrompt = (await page.locator("#quiz-prompt").innerText()).trim();
+    const choiceCount = await count(page, "#quiz-choices button");
+    // わざと外す(必ず不正解になる選択肢を選ぶため、正解でないものを探す)
+    const answerId = await page.evaluate(() => {
+      const marked = document.querySelector('#quiz-choices button[data-state]');
+      return marked ? marked.dataset.choice : null;
+    });
+    await page.click("#quiz-choices button:last-child");
+    await page.waitForTimeout(150);
+    const verdict1 = (await page.locator("#quiz-verdict").innerText()).trim();
+    const detailRows = await count(page, "#quiz-detail li");
+    const disabled = await page.locator("#quiz-choices button").first().isDisabled();
+    report("B-22", choiceCount === 4 && verdict1.length > 0 && disabled, `選択肢 ${choiceCount} / 判定 "${verdict1}" / 回答後は押せない ${disabled}`);
+
+    // B-23: 画面の数値が計算と一致する(◎ の行が正解の型)
+    const rows = await page.locator("#quiz-detail li").allInnerTexts();
+    const marked = rows.filter((r) => r.startsWith("◎")).length;
+    report("B-23", detailRows === 3 && marked === 1 && rows.every((r) => /適性|使えない/.test(r)), `理由 ${detailRows} 行 / 正解印 ${marked} 個 / 先頭 "${(rows[0] ?? "").replace(/\s+/g, " ")}"`);
+
+    // B-24: 次の問題へ
+    await page.click("#quiz-next");
+    await page.waitForTimeout(150);
+    const secondPrompt = (await page.locator("#quiz-prompt").innerText()).trim();
+    const quizScoreText = (await page.locator("#quiz-score").innerText()).trim();
+    report("B-24", secondPrompt !== firstPrompt && /1 問中/.test(quizScoreText), `設問が変わった ${secondPrompt !== firstPrompt} / 得点 "${quizScoreText}" / 初回の正解 ${answerId}`);
 
     // B-13: 張る前は判定を出さない
     await page.click("#btn-reset");
