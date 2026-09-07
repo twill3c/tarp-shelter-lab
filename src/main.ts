@@ -10,6 +10,10 @@ import { trackDrag } from "./pointer";
 import type { Wind } from "./wind";
 import { stability } from "./wind";
 import { renderWind, renderWindPanel, swayOffset } from "./windview";
+import type { RainRate } from "./rain";
+import { poolTarget, relaxPool } from "./rain";
+import { renderRain, renderRainPanel } from "./rainview";
+import { standingHeight } from "./wind";
 import { computeScore, rankOf } from "./score";
 import type { Action, SimEvent, SimState } from "./simulator";
 import { blockers, initialState, isComplete, nextTarget, reduce } from "./simulator";
@@ -46,9 +50,13 @@ interface App {
   auto: boolean;
   lastScore: { score: number; rank: string; seconds: number; mistakes: number; hints: number } | null;
   wind: Wind;
+  rain: RainRate;
+  /** 溜まりは時間で緩和する見せ方の量。判定そのものではない */
+  pool: number;
+  lastTick: number;
 }
 
-const app: App = { state: initialState(shelters[0]!), hint: null, busy: false, auto: false, lastScore: null, wind: { windFrom: 0, speed: 0 } };
+const app: App = { state: initialState(shelters[0]!), hint: null, busy: false, auto: false, lastScore: null, wind: { windFrom: 0, speed: 0 }, rain: 0, pool: 0, lastTick: 0 };
 
 function svg(): SVGSVGElement {
   const el = document.querySelector<SVGSVGElement>("svg#field");
@@ -76,6 +84,7 @@ function render(tarpOverride?: Point[] | undefined): void {
   renderShelterList(shelters, s.shelter.id, b, selectShelter);
   renderScore(app.lastScore, b[s.shelter.id] ?? null, app.auto ? "AUTO 再生の記録は保存しません" : "ベストスコアはこの端末にだけ保存されます");
   renderWindPanel(s, app.wind);
+  renderRainPanel(s, app.pool, app.rain);
   for (const id of ["btn-hint", "btn-auto"]) {
     const btn = document.querySelector<HTMLButtonElement>(`#${id}`);
     if (btn) btn.disabled = app.busy || isComplete(s);
@@ -145,6 +154,7 @@ function selectShelter(id: string): void {
 
 function startShelter(sh: Shelter): void {
   app.state = initialState(sh);
+  app.pool = 0;
   app.hint = null;
   app.auto = false;
   app.lastScore = null;
@@ -280,6 +290,16 @@ function tick(now: number): void {
   // 矢印は流れ、タープは風下へ揺れる。周期 2.4 秒
   const phase = (now / 2400) % 1;
   renderWind(app.state, app.wind, phase);
+  // 溜まりは平衡へ緩和する。dt は実時間(タブが止まっていた分を一気に足さない)
+  const dt = app.lastTick === 0 ? 0 : Math.min(0.25, (now - app.lastTick) / 1000);
+  app.lastTick = now;
+  const target = poolTarget(app.state, standingHeight(app.state), app.rain);
+  const beforePct = Math.round(app.pool * 100);
+  app.pool = relaxPool(app.pool, target, dt);
+  renderRain(app.state, app.rain, app.pool, (now / 900) % 1);
+  // **表示している値が変わったときに描き直す。** 生の差で間引くと、緩和が遅いときに
+  // 1 フレームの変化が閾値を一度も超えず、絵は育つのに数字が止まったままになる(実測)
+  if (Math.round(app.pool * 100) !== beforePct) renderRainPanel(app.state, app.pool, app.rain);
   const field = document.querySelector<SVGGElement>("#layer-tarp");
   if (field) {
     const { dx, dy } = swayOffset(app.wind, stability(app.state, app.wind), phase);
@@ -308,6 +328,11 @@ function boot(): void {
   const dir = document.querySelector<HTMLSelectElement>("#wind-dir");
   dir?.addEventListener("change", () => {
     app.wind = { ...app.wind, windFrom: Number(dir.value) };
+    render();
+  });
+  const rain = document.querySelector<HTMLSelectElement>("#rain-rate");
+  rain?.addEventListener("change", () => {
+    app.rain = Number(rain.value) as RainRate;
     render();
   });
   const speed = document.querySelector<HTMLInputElement>("#wind-speed");

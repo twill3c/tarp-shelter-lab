@@ -49,6 +49,9 @@ const GATES = {
   "B-13": "F-17",
   "B-14": "F-08",
   "B-15": "F-17",
+  "B-16": "G-20",
+  "B-17": "G-21",
+  "B-18": "F-19",
 };
 
 const results = [];
@@ -249,6 +252,52 @@ async function main() {
     await speed.dispatchEvent("input");
     await page.waitForTimeout(150);
     report("B-15", swayOff === "" && seen.size >= 3, `無風の変換 "${swayOff}" / 風ありの異なる変換 ${seen.size} 種`);
+
+    // B-16 / B-17 / B-18: 雨
+    const rate = page.locator("#rain-rate");
+    const drops0 = await count(page, "line.raindrop");
+    await rate.selectOption("3");
+    await page.waitForTimeout(200);
+    const drops3 = await count(page, "line.raindrop");
+    const rainLabel = await page.locator("#rain-verdict").getAttribute("data-label");
+    const rainValue = Number(await page.locator("#rain-value").innerText());
+    // 溜まりが育つのを待つ(平衡へ緩和するので時間がかかる)
+    let poolSeen = 0;
+    let puddles = 0;
+    for (let k = 0; k < 12; k++) {
+      await page.waitForTimeout(250);
+      poolSeen = Math.max(poolSeen, Number((await page.locator("#pool-value").innerText()).replace("%", "")));
+      puddles = Math.max(puddles, await count(page, "ellipse.puddle"));
+    }
+    await rate.selectOption("0");
+    await page.waitForTimeout(250);
+    const dropsBack = await count(page, "line.raindrop");
+    report("B-16", drops0 === 0 && drops3 > 0 && dropsBack === 0, `雨滴 0→${drops3}→${dropsBack} / 排水 ${rainValue}(${rainLabel})`);
+
+    // B-17: 排水の良い型と悪い型で判定が違う(向きと同じく、対照で示す)
+    await page.click('#shelter-list button[data-shelter="lean-to"]');
+    await page.click("#btn-auto");
+    await page.waitForFunction(() => document.querySelector("#status")?.textContent?.includes("SHELTER COMPLETE"), null, { timeout: 40000 });
+    await page.waitForTimeout(150);
+    const leanValue = Number(await page.locator("#rain-value").innerText());
+    report("B-17", Number.isFinite(rainValue) && Number.isFinite(leanValue) && rainValue > leanValue, `A-Frame ${rainValue} > Lean-To ${leanValue}`);
+
+    // B-18: 溜まりが実際に育つ証拠(HC-071)
+    await page.locator("#rain-rate").selectOption("3");
+    let grew = 0;
+    for (let k = 0; k < 14; k++) {
+      await page.waitForTimeout(250);
+      grew = Math.max(grew, Number((await page.locator("#pool-value").innerText()).replace("%", "")));
+    }
+    const puddleNow = await count(page, "ellipse.puddle");
+    // **判定は雨が降っている間に読む。** 止めてから読むと「雨なし」になり、
+    // 食い違いの条件が決して真にならない空振りの検査になる
+    const verdictNow = await page.locator("#rain-verdict").getAttribute("data-label");
+    await page.locator("#rain-rate").selectOption("0");
+    await page.waitForTimeout(200);
+    // 判定と溜まりが食い違わないこと(HC-202)。溜まっているのに GOOD と出ていないか
+    const consistent = verdictNow !== "" && !(verdictNow === "GOOD" && grew > 5);
+    report("B-18", grew > 5 && puddleNow > 0 && consistent, `溜まり 最大 ${grew}% / 水たまり ${puddleNow} 個 / 判定 ${verdictNow}(A-Frame では ${poolSeen}% / ${puddles} 個)`);
 
     // B-13: 張る前は判定を出さない
     await page.click("#btn-reset");

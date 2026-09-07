@@ -1,10 +1,10 @@
 {
- "stamp": "f2e18f888b6b9118",
+ "stamp": "63149e159e1e0c7e",
  "files": [
   {
    "path": "index.html",
-   "bytes": 9412,
-   "sha": "870cb1c1f065"
+   "bytes": 10616,
+   "sha": "0991ffb61370"
   },
   {
    "path": "src/animate.ts",
@@ -33,8 +33,8 @@
   },
   {
    "path": "src/main.ts",
-   "bytes": 11843,
-   "sha": "e9f79f43ed51"
+   "bytes": 13239,
+   "sha": "28af58bdcde5"
   },
   {
    "path": "src/model.ts",
@@ -45,6 +45,16 @@
    "path": "src/pointer.ts",
    "bytes": 2045,
    "sha": "0747f0dc4c13"
+  },
+  {
+   "path": "src/rain.ts",
+   "bytes": 4595,
+   "sha": "733a0cca323a"
+  },
+  {
+   "path": "src/rainview.ts",
+   "bytes": 4464,
+   "sha": "d2c4cbf02876"
   },
   {
    "path": "src/score.ts",
@@ -73,13 +83,13 @@
   },
   {
    "path": "src/windview.ts",
-   "bytes": 5435,
-   "sha": "e91ac6b4820e"
+   "bytes": 5809,
+   "sha": "0a3d06938d50"
   },
   {
    "path": "styles/style.css",
-   "bytes": 12399,
-   "sha": "c4a34e834f5d"
+   "bytes": 12933,
+   "sha": "02cc0ca810fb"
   },
   {
    "path": "data/shelters.json",

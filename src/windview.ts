@@ -122,11 +122,19 @@ export function renderWindPanel(state: SimState, wind: Wind): void {
     q<HTMLElement>("#wind-bar").style.width = "0%";
     return;
   }
-  verdict.textContent = label;
-  verdict.dataset["label"] = label;
+  // 判定する対象が無いときは判定しない(雨の側と揃える)
+  if (wind.speed <= 0) {
+    verdict.textContent = "風なし";
+    verdict.dataset["label"] = "";
+  } else {
+    verdict.textContent = label;
+    verdict.dataset["label"] = label;
+  }
   q<HTMLElement>("#wind-reason").textContent = stabilityReason(state, wind);
   q<HTMLElement>("#wind-value").textContent = String(Math.round(value));
   const bar = q<HTMLElement>("#wind-bar");
   bar.style.width = `${Math.round(value)}%`;
+  // **ゲージは能力から色を出す**(バッジは状況から)。ここを状況の判定に合わせると、
+  // 無風で安定度 100 なのに警戒色になる
   bar.className = label;
 }

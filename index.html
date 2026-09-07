@@ -52,6 +52,7 @@
             <g id="layer-tarp"></g>
             <g id="layer-parts"></g>
             <g id="layer-wind"></g>
+            <g id="layer-rain"></g>
             <g id="layer-labels"></g>
             <g id="layer-drag"></g>
           </svg>
@@ -93,6 +94,26 @@
               <span id="wind-speed-val" class="num">0%</span>
             </label>
             <span class="gauge stability">安定度<span class="bar"><i id="wind-bar"></i></span><span id="wind-value" class="num">—</span></span>
+          </div>
+        </section>
+
+        <section id="rain" class="wind rain">
+          <div class="wind-head">
+            <h3>RAIN</h3>
+            <span id="rain-verdict" class="verdict" data-label="">—</span>
+            <span id="rain-reason" class="reason"></span>
+          </div>
+          <div class="wind-controls">
+            <label>雨量
+              <select id="rain-rate">
+                <option value="0">なし</option>
+                <option value="1">弱</option>
+                <option value="2">中</option>
+                <option value="3">強</option>
+              </select>
+            </label>
+            <span class="gauge stability">排水力<span class="bar"><i id="rain-bar"></i></span><span id="rain-value" class="num">—</span></span>
+            <span class="gauge stability">溜まり<span class="bar"><i id="pool-bar"></i></span><span id="pool-value" class="num">0%</span></span>
           </div>
         </section>
 
@@ -148,6 +169,7 @@
         <li>完成の六条件: 展開・全ポール・全ペグ・全ロープが正しいペグ・全張力 ≥ 70・全ポール高さが範囲内。</li>
         <li>スコア = 1000 − max(0, 秒 − 30) × 5 − ミス × 60 − ヒント × 40。S ≥ 900 / A ≥ 750 / B ≥ 550 / C ≥ 350 / D。</li>
         <li>判定・張力・スコアは UI から独立した純関数で、単体テストが守る。画面の幾何と操作は実ブラウザで別に検品する。</li>
+        <li>雨は勾配と張りだけで見る。屋根面の水平距離から勾配を出し、最も寝ている面が排水を決める。排水度 = 勾配(45 度で満点)× 平均張力。溜まり = 雨量 − 排水度。</li>
         <li>風は完全な空力ではなく、向きと張力が効くことが分かる近似。荷重 = 動圧(風速の二乗)× 抗力係数 × 正面投影面積で、開口が風上を向くと係数が上がる。安定度 = 平均張力 − 荷重。</li>
         <li>原図は転載せず、FM 3-05.70(旧 FM 21-76)第 5 章の構成を自作 SVG に読み替えている。出典と権利は左の ORIGINAL 欄。</li>
       </ul>

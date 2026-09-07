@@ -758,3 +758,41 @@ footer a {
   fill: #eef3ff;
   stroke: none;
 }
+
+/* ---- 雨 ---- */
+.rain {
+  margin-top: 0.5rem;
+}
+
+.verdict[data-label="GOOD"] {
+  color: var(--ok);
+  border-color: var(--ok);
+}
+
+.verdict[data-label="POOL"] {
+  color: #fff;
+  background: #2f5d86;
+  border-color: #2f5d86;
+}
+
+.gauge.stability .bar i.GOOD {
+  background: var(--ok);
+}
+
+.gauge.stability .bar i.POOL {
+  background: #2f5d86;
+}
+
+.raindrop {
+  stroke: #cfe3f5;
+  stroke-width: 2;
+  stroke-linecap: round;
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.puddle {
+  fill: #2f5d86;
+  opacity: 0.45;
+  pointer-events: none;
+}
