@@ -36,6 +36,7 @@ describe("T-031 各課題は型を選ばせる(G-22)", () => {
     m02: ["a-frame"],
     m03: ["diamond", "plow-point", "teepee"],
     m04: ["lean-to", "plow-point"],
+    m05: ["lean-to", "diamond"],
   };
   it("課題 × 型の総当たりで、達成できる型が 1 つ以上・できない型が 1 つ以上", () => {
     for (const m of missions) {

@@ -26,6 +26,22 @@ const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1000, height: 900 } });
 await page.goto(base, { waitUntil: "networkidle" });
 
+if (process.argv.includes("--space")) {
+  await page.click('#shelter-list button[data-shelter="lean-to"]');
+  await page.waitForTimeout(150);
+  await page.click("#btn-auto");
+  await page.waitForFunction(() => document.querySelector("#status")?.textContent?.includes("SHELTER COMPLETE"), null, { timeout: 40000 });
+  await page.waitForTimeout(300);
+  const metas = await page.locator("#shelter-list .meta").allInnerTexts();
+  for (const m of metas) console.log("  ", m.replace(/\s+/g, " "));
+  const h = await page.locator(".heights .hstat").allInnerTexts();
+  console.log("高さの行:", h.join(" | "));
+  await page.locator("aside.shelters").screenshot({ path: join(shots, "space-list.png") });
+  await browser.close();
+  srv.close();
+  process.exit(0);
+}
+
 if (process.argv.includes("--new")) {
   for (const id of ["plow-point", "teepee"]) {
     await page.click(`#shelter-list button[data-shelter="${id}"]`);

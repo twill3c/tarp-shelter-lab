@@ -7,6 +7,7 @@ import { isComplete } from "./simulator";
 import type { StorageLike } from "./storage";
 import type { Wind } from "./wind";
 import { stability, standingHeight } from "./wind";
+import { habitabilityOf } from "./habitat";
 
 export interface MissionConditions {
   windFrom: number;
@@ -22,6 +23,7 @@ export interface MissionLimits {
 
 export interface MissionRequirements {
   minStability?: number;
+  minHabitability?: number;
   rainVerdict?: DrainageLabel;
   maxSeconds?: number;
   maxMistakes?: number;
@@ -84,6 +86,7 @@ export function loadMissions(json: unknown): Mission[] {
     const reqRaw = obj(m["requirements"], `${p}.requirements`);
     const requirements: MissionRequirements = {};
     if (reqRaw["minStability"] !== undefined) requirements.minStability = num(reqRaw["minStability"], `${p}.requirements.minStability`);
+    if (reqRaw["minHabitability"] !== undefined) requirements.minHabitability = num(reqRaw["minHabitability"], `${p}.requirements.minHabitability`);
     if (reqRaw["maxSeconds"] !== undefined) requirements.maxSeconds = num(reqRaw["maxSeconds"], `${p}.requirements.maxSeconds`);
     if (reqRaw["maxMistakes"] !== undefined) requirements.maxMistakes = num(reqRaw["maxMistakes"], `${p}.requirements.maxMistakes`);
     if (reqRaw["rainVerdict"] !== undefined) {
@@ -165,6 +168,15 @@ export function missionStatus(state: SimState, mission: Mission, ctx: MissionCon
       label: `安定度 ${req.minStability} 以上`,
       ok: complete && value >= req.minStability,
       detail: `いまの安定度 ${Math.round(value)}`,
+    });
+  }
+  if (req.minHabitability !== undefined) {
+    const value = habitabilityOf(state);
+    checks.push({
+      id: "minHabitability",
+      label: `居住性 ${req.minHabitability} 以上`,
+      ok: complete && value >= req.minHabitability,
+      detail: `いまの居住性 ${value.toFixed(2)}`,
     });
   }
   if (req.rainVerdict !== undefined) {

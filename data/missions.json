@@ -63,6 +63,22 @@
       "requirements": {
         "minStability": 60
       }
+    },
+    {
+      "id": "m05",
+      "title": "広く使える屋根で雨をしのぐ",
+      "brief": "雨の中で、座って過ごせる広さを確保する。狭くて強い屋根では足りない。",
+      "hint": "屋根の勾配だけでなく、頭上に 90 cm ある床の広さを見る。",
+      "conditions": {
+        "windFrom": 0,
+        "windSpeed": 0,
+        "rain": 2
+      },
+      "limits": {},
+      "requirements": {
+        "minHabitability": 0.25,
+        "rainVerdict": "GOOD"
+      }
     }
   ]
 }

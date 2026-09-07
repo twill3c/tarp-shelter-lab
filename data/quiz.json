@@ -1,5 +1,5 @@
 {
-  "$comment": "設問は状況だけを持つ。正解はモデルから導く(SPEC §4.10)。差が付くことは 2026-09-07(型 5 種)に実測して確かめた。",
+  "$comment": "設問は状況と基準だけを持つ。正解はモデルから導く(SPEC §4.10)。基準は weather(耐えられるか)と space(広く使えるか)。差が付くことは 2026-09-08 に実測した。",
   "questions": [
     {
       "id": "q1",
@@ -9,7 +9,8 @@
         "windSpeed": 45,
         "rain": 3
       },
-      "limits": {}
+      "limits": {},
+      "criterion": "weather"
     },
     {
       "id": "q2",
@@ -19,7 +20,8 @@
         "windSpeed": 70,
         "rain": 0
       },
-      "limits": {}
+      "limits": {},
+      "criterion": "weather"
     },
     {
       "id": "q3",
@@ -31,7 +33,8 @@
       },
       "limits": {
         "pegs": 3
-      }
+      },
+      "criterion": "weather"
     },
     {
       "id": "q4",
@@ -43,7 +46,8 @@
       },
       "limits": {
         "pegs": 4
-      }
+      },
+      "criterion": "weather"
     },
     {
       "id": "q5",
@@ -55,7 +59,8 @@
       },
       "limits": {
         "poles": 1
-      }
+      },
+      "criterion": "weather"
     },
     {
       "id": "q6",
@@ -65,7 +70,32 @@
         "windSpeed": 100,
         "rain": 3
       },
-      "limits": {}
+      "limits": {},
+      "criterion": "weather"
+    },
+    {
+      "id": "q7",
+      "prompt": "三人で座って過ごしたい。天候は穏やか。いちばん広く使えるのはどれか。",
+      "conditions": {
+        "windFrom": 0,
+        "windSpeed": 0,
+        "rain": 0
+      },
+      "limits": {},
+      "criterion": "space"
+    },
+    {
+      "id": "q8",
+      "prompt": "ポールは 1 本だけ。座って過ごせる広さがいちばん取れるのはどれか。",
+      "conditions": {
+        "windFrom": 0,
+        "windSpeed": 0,
+        "rain": 0
+      },
+      "limits": {
+        "poles": 1
+      },
+      "criterion": "space"
     }
   ]
 }

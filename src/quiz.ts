@@ -9,6 +9,7 @@ import type { Shelter } from "./model";
 import type { SimState } from "./simulator";
 import { initialState, reduce } from "./simulator";
 import { stability, standingHeight } from "./wind";
+import { habitability } from "./habitat";
 
 export interface QuizConditions {
   windFrom: number;
@@ -16,17 +17,32 @@ export interface QuizConditions {
   rain: RainRate;
 }
 
+/** 何を基準に選ばせるか。weather = 耐えられるか / space = 広く使えるか */
+export type QuizCriterion = "weather" | "space";
+
 export interface Question {
   id: string;
   prompt: string;
   conditions: QuizConditions;
   limits: MissionLimits;
+  criterion: QuizCriterion;
 }
 
 /** 「どれも適さない」の選択肢 ID */
 export const NONE_ID = "none";
-/** 最良と次点の差がこれ未満なら、設問として差が付いていない */
-export const MIN_MARGIN = 0.1;
+/**
+ * 差が付いているかの判定。**絶対値だけで書くと基準の値域に依存する** ——
+ * 耐候の適性は 0〜1 に広く散るが、広さの適性は 0.14〜0.35 の狭い帯に収まるので、
+ * 絶対 0.10 は「最良が次点の 1.4 倍」を要求してしまう(loop_010 で実測)。
+ * 相対(最良の 15% 以上)と絶対の下限(0.03)の二本で見る。
+ */
+export const MIN_MARGIN_RATIO = 0.15;
+export const MIN_MARGIN_ABS = 0.03;
+
+/** 最良の値に対して、差が十分かを判定する */
+export function isMarginEnough(margin: number, best: number): boolean {
+  return margin >= MIN_MARGIN_ABS && margin >= best * MIN_MARGIN_RATIO;
+}
 /** 最大適性がこれ未満なら「どれも適さない」が正解 */
 export const NONE_MAX = 0.5;
 
@@ -71,7 +87,16 @@ export function loadQuiz(json: unknown): Question[] {
       if (!Number.isInteger(n) || n <= 0) throw new QuizDataError(`${p}.limits.${key}`, "正の整数が必要");
       limits[key] = n;
     }
-    return { id: str(q["id"], `${p}.id`), prompt: str(q["prompt"], `${p}.prompt`), conditions: { windFrom, windSpeed, rain: rain as RainRate }, limits };
+    const criterionRaw: string = q["criterion"] === undefined ? "weather" : str(q["criterion"], `${p}.criterion`);
+    if (criterionRaw !== "weather" && criterionRaw !== "space") throw new QuizDataError(`${p}.criterion`, "weather か space");
+    const criterion: QuizCriterion = criterionRaw;
+    return {
+      id: str(q["id"], `${p}.id`),
+      prompt: str(q["prompt"], `${p}.prompt`),
+      conditions: { windFrom, windSpeed, rain: rain as RainRate },
+      limits,
+      criterion,
+    };
   });
   const ids = out.map((q) => q.id);
   if (new Set(ids).size !== ids.length) throw new QuizDataError("questions", "id が重複");
@@ -88,10 +113,11 @@ function pitched(shelter: Shelter): SimState {
 export interface ShelterScore {
   shelterId: string;
   name: string;
-  /** 適性 0〜1。先に壊れるほうが決めるので min を採る */
+  /** 適性 0〜1。基準が weather なら耐えられるか、space なら広く使えるか */
   fitness: number;
   stability: number;
   pool: number;
+  habitability: number;
   eligible: boolean;
   /** 適格でない理由(適格なら空) */
   reason: string;
@@ -120,12 +146,16 @@ export function evaluateQuestion(question: Question, shelters: Shelter[]): Quest
       const limit = question.limits[key];
       if (limit !== undefined && count > limit) over.push(`${label}を ${count} 本使う(上限 ${limit})`);
     }
+    const hab = habitability(sh, h);
     return {
       shelterId: sh.id,
       name: sh.name,
-      fitness: Math.min(stab / 100, 1 - pool),
+      // 基準が space なら広さで選ぶ。**耐えられるかと広いかは別の問い**なので、
+      // 一つの数に混ぜず、設問がどちらを問うているかで切り替える
+      fitness: question.criterion === "space" ? hab : Math.min(stab / 100, 1 - pool),
       stability: stab,
       pool,
+      habitability: hab,
       eligible: over.length === 0,
       reason: over.join("・"),
     };
@@ -138,12 +168,12 @@ export function evaluateQuestion(question: Question, shelters: Shelter[]): Quest
   const best = eligible[0]!;
   // 適格な型が 1 つなら選ぶ余地が無いので、差は最大とみなす
   const margin = eligible.length === 1 ? 1 : best.fitness - eligible[1]!.fitness;
-  if (best.fitness < NONE_MAX) {
+  if (question.criterion !== "space" && best.fitness < NONE_MAX) {
     // 「どれも適さない」が正解。次点との差ではなく**閾値からの隔たり**で一意性を見る。
     // ここに同じ MIN_MARGIN を要求しないと判定が必ず真になり、何も測らない ——
     // 最良が閾値のすぐ下にある設問は、その型を選んだ人を責められない(loop_006 で実測: 0.424 と閾値 0.5)
     const gap = NONE_MAX - best.fitness;
-    return { answerId: NONE_ID, scores, margin: gap, discriminating: gap >= MIN_MARGIN };
+    return { answerId: NONE_ID, scores, margin: gap, discriminating: isMarginEnough(gap, NONE_MAX) };
   }
-  return { answerId: best.shelterId, scores, margin, discriminating: margin >= MIN_MARGIN };
+  return { answerId: best.shelterId, scores, margin, discriminating: isMarginEnough(margin, best.fitness) };
 }

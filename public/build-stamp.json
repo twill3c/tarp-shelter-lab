@@ -1,10 +1,10 @@
 {
- "stamp": "d5258ffde2218927",
+ "stamp": "789af64a1e61ad87",
  "files": [
   {
    "path": "index.html",
-   "bytes": 13110,
-   "sha": "3b3431c86b92"
+   "bytes": 13399,
+   "sha": "b90b08becd2d"
   },
   {
    "path": "src/animate.ts",
@@ -20,6 +20,11 @@
    "path": "src/geometry.ts",
    "bytes": 819,
    "sha": "8e2629a0c666"
+  },
+  {
+   "path": "src/habitat.ts",
+   "bytes": 4212,
+   "sha": "206ca09158b5"
   },
   {
    "path": "src/hygiene.ts",
@@ -48,8 +53,8 @@
   },
   {
    "path": "src/mission.ts",
-   "bytes": 7775,
-   "sha": "63c58f140d23"
+   "bytes": 8303,
+   "sha": "a1ca845764fd"
   },
   {
    "path": "src/missionview.ts",
@@ -68,8 +73,8 @@
   },
   {
    "path": "src/quiz.ts",
-   "bytes": 6256,
-   "sha": "a189a8567f27"
+   "bytes": 7796,
+   "sha": "493e4b183508"
   },
   {
    "path": "src/quizview.ts",
@@ -103,8 +108,8 @@
   },
   {
    "path": "src/view.ts",
-   "bytes": 15637,
-   "sha": "91e9fe2f6b1d"
+   "bytes": 16019,
+   "sha": "68cc8bc1c7ab"
   },
   {
    "path": "src/wind.ts",
@@ -128,13 +133,13 @@
   },
   {
    "path": "data/missions.json",
-   "bytes": 1930,
-   "sha": "31ab52ab2971"
+   "bytes": 2449,
+   "sha": "548ecc123c9b"
   },
   {
    "path": "data/quiz.json",
-   "bytes": 1787,
-   "sha": "e0e6373c0f32"
+   "bytes": 2635,
+   "sha": "41e8f0ef830e"
   },
   {
    "path": "data/shelters.json",

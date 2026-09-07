@@ -2,6 +2,7 @@
 import type { Point, Poly } from "./geometry";
 import { dist, polyToPath } from "./geometry";
 import { TENSION_OK, poleHeightStatus } from "./judge";
+import { habitability } from "./habitat";
 import type { Shelter } from "./model";
 import type { BestRecord } from "./storage";
 import type { SimState } from "./simulator";
@@ -236,7 +237,9 @@ export function renderControls(s: SimState, onHeight: (pole: string, h: number) 
     const stat = document.createElement("span");
     const hs = poleHeightStatus(p.height, placed.height);
     stat.className = `hstat ${hs}`;
-    stat.textContent = `${placed.height}cm ${hs}`;
+    // 高さを変えると居住性が変わる。数を並べて、変化が見えるようにする
+    stat.textContent = `${placed.height}cm ${hs} / 居住性 ${habitability(s.shelter, placed.height).toFixed(2)}`;
+    stat.dataset["habitability"] = habitability(s.shelter, placed.height).toFixed(2);
     label.append(name, input, stat);
     heights.append(label);
   }
@@ -278,7 +281,8 @@ export function renderShelterList(shelters: Shelter[], currentId: string, bests:
       name.textContent = `${s.name.toUpperCase()} / ${s.nameJa}`;
       const meta = document.createElement("span");
       meta.className = "meta";
-      meta.textContent = `難度 ${"★".repeat(s.difficulty)}  ポール ${s.poles.length}・ペグ ${s.pegs.length}・ロープ ${s.ropes.length}  [${s.weather.join(" / ")}]`;
+      const hab = habitability(s, Math.max(...s.poles.map((p) => p.height.ideal)));
+      meta.textContent = `難度 ${"★".repeat(s.difficulty)}  ポール ${s.poles.length}・ペグ ${s.pegs.length}・ロープ ${s.ropes.length}  居住性 ${hab.toFixed(2)}`;
       const best = document.createElement("span");
       best.className = "best";
       best.dataset["best"] = s.id;
