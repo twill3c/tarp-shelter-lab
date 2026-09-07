@@ -796,3 +796,60 @@ footer a {
   opacity: 0.45;
   pointer-events: none;
 }
+
+/* ---- 課題 ---- */
+.mission {
+  margin-top: 0;
+}
+
+.checks {
+  list-style: none;
+  padding: 0;
+  margin: 0.5rem 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.8rem;
+  font-size: 0.8rem;
+}
+
+.checks li {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  color: var(--sub);
+}
+
+.checks li .mark {
+  font-weight: 700;
+  width: 1.1em;
+  text-align: center;
+}
+
+.checks li[data-ok="true"] .mark {
+  color: var(--ok);
+}
+
+.checks li[data-ok="false"] .mark {
+  color: var(--alert);
+}
+
+.checks li[data-ok="false"] {
+  color: var(--ink);
+}
+
+.verdict[data-label="CLEAR"] {
+  color: #fff;
+  background: var(--ok);
+  border-color: var(--ok);
+}
+
+.verdict[data-label="TRYING"] {
+  color: var(--sub);
+}
+
+/* 課題が握っている操作は触れないことを見せる */
+.wind-controls select:disabled,
+.wind-controls input:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}

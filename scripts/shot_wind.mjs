@@ -26,6 +26,25 @@ const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1000, height: 900 } });
 await page.goto(base, { waitUntil: "networkidle" });
 
+if (process.argv.includes("--mission")) {
+  for (const [mid, shelter] of [["m03", "a-frame"], ["m03", "diamond"], ["m01", "lean-to"]]) {
+    await page.locator("#mission-select").selectOption(mid);
+    await page.waitForTimeout(150);
+    await page.click(`#shelter-list button[data-shelter="${shelter}"]`);
+    await page.waitForTimeout(150);
+    await page.click("#btn-auto");
+    await page.waitForFunction(() => document.querySelector("#status")?.textContent?.includes("SHELTER COMPLETE"), null, { timeout: 40000 });
+    await page.waitForTimeout(2500);
+    const v = (await page.locator("#mission-verdict").innerText()).trim();
+    const checks = await page.locator("#mission-checks li").allInnerTexts();
+    console.log(`${mid} × ${shelter} → ${v} :: ${checks.map((c) => c.replace(/\s+/g, " ")).join(" | ")}`);
+    await page.locator("section.simulator").screenshot({ path: join(shots, `mission-${mid}-${shelter}.png`) });
+  }
+  await browser.close();
+  srv.close();
+  process.exit(0);
+}
+
 const cases = process.argv.includes("--rain")
   ? [["lean-to", "0", "0", "3"], ["a-frame", "0", "0", "3"]]
   : [["a-frame", "90", "80"], ["a-frame", "0", "80"], ["lean-to", "180", "70"], ["lean-to", "0", "70"]];

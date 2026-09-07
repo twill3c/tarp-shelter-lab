@@ -70,6 +70,23 @@
         <p id="instruction" class="instruction"></p>
         <p id="feedback" class="feedback" aria-live="polite"></p>
 
+        <section id="mission" class="wind mission">
+          <div class="wind-head">
+            <h3>MISSION</h3>
+            <span id="mission-verdict" class="verdict" data-label="">—</span>
+            <span id="mission-title" class="reason"></span>
+          </div>
+          <div class="wind-controls">
+            <label>課題
+              <select id="mission-select">
+                <option value="">(自由に張る)</option>
+              </select>
+            </label>
+            <span id="mission-brief" class="reason"></span>
+          </div>
+          <ul id="mission-checks" class="checks"></ul>
+        </section>
+
         <section id="wind" class="wind">
           <div class="wind-head">
             <h3>WIND</h3>
@@ -169,6 +186,7 @@
         <li>完成の六条件: 展開・全ポール・全ペグ・全ロープが正しいペグ・全張力 ≥ 70・全ポール高さが範囲内。</li>
         <li>スコア = 1000 − max(0, 秒 − 30) × 5 − ミス × 60 − ヒント × 40。S ≥ 900 / A ≥ 750 / B ≥ 550 / C ≥ 350 / D。</li>
         <li>判定・張力・スコアは UI から独立した純関数で、単体テストが守る。画面の幾何と操作は実ブラウザで別に検品する。</li>
+        <li>課題(MISSION)は判定できる述語の集まり。材料の上限・天候・時間を課し、満たしていない項目を必ず並べて出す。どの課題も、達成できる型とできない型が必ずある。</li>
         <li>雨は勾配と張りだけで見る。屋根面の水平距離から勾配を出し、最も寝ている面が排水を決める。排水度 = 勾配(45 度で満点)× 平均張力。溜まり = 雨量 − 排水度。</li>
         <li>風は完全な空力ではなく、向きと張力が効くことが分かる近似。荷重 = 動圧(風速の二乗)× 抗力係数 × 正面投影面積で、開口が風上を向くと係数が上がる。安定度 = 平均張力 − 荷重。</li>
         <li>原図は転載せず、FM 3-05.70(旧 FM 21-76)第 5 章の構成を自作 SVG に読み替えている。出典と権利は左の ORIGINAL 欄。</li>

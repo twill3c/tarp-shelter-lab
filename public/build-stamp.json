@@ -1,10 +1,10 @@
 {
- "stamp": "63149e159e1e0c7e",
+ "stamp": "bd3f3b12727debab",
  "files": [
   {
    "path": "index.html",
-   "bytes": 10616,
-   "sha": "0991ffb61370"
+   "bytes": 11495,
+   "sha": "bd1e8a59dbf9"
   },
   {
    "path": "src/animate.ts",
@@ -33,8 +33,18 @@
   },
   {
    "path": "src/main.ts",
-   "bytes": 13239,
-   "sha": "28af58bdcde5"
+   "bytes": 15390,
+   "sha": "242457291c45"
+  },
+  {
+   "path": "src/mission.ts",
+   "bytes": 7775,
+   "sha": "63c58f140d23"
+  },
+  {
+   "path": "src/missionview.ts",
+   "bytes": 2928,
+   "sha": "7213113fcfd7"
   },
   {
    "path": "src/model.ts",
@@ -88,8 +98,13 @@
   },
   {
    "path": "styles/style.css",
-   "bytes": 12933,
-   "sha": "02cc0ca810fb"
+   "bytes": 13825,
+   "sha": "9a4511a4834d"
+  },
+  {
+   "path": "data/missions.json",
+   "bytes": 1922,
+   "sha": "7bfcb5e4706e"
   },
   {
    "path": "data/shelters.json",

@@ -1,5 +1,6 @@
 // 画面の主制御。状態は SimState 一つ。描画は状態から毎回作り直す。
 import raw from "../data/shelters.json";
+import missionRaw from "../data/missions.json";
 import { morphPoly, sleep } from "./animate";
 import { autoPlan } from "./auto";
 import type { Point } from "./geometry";
@@ -13,6 +14,9 @@ import { renderWind, renderWindPanel, swayOffset } from "./windview";
 import type { RainRate } from "./rain";
 import { poolTarget, relaxPool } from "./rain";
 import { renderRain, renderRainPanel } from "./rainview";
+import type { Mission } from "./mission";
+import { clearedIds, loadMissions, recordClear } from "./mission";
+import { renderMissionList, renderMissionPanel } from "./missionview";
 import { standingHeight } from "./wind";
 import { computeScore, rankOf } from "./score";
 import type { Action, SimEvent, SimState } from "./simulator";
@@ -36,6 +40,7 @@ import {
 } from "./view";
 
 const shelters = loadShelters(raw);
+const missions = loadMissions(missionRaw);
 
 const storage: StorageLike = {
   getItem: (k) => window.localStorage.getItem(k),
@@ -51,12 +56,13 @@ interface App {
   lastScore: { score: number; rank: string; seconds: number; mistakes: number; hints: number } | null;
   wind: Wind;
   rain: RainRate;
+  mission: Mission | null;
   /** 溜まりは時間で緩和する見せ方の量。判定そのものではない */
   pool: number;
   lastTick: number;
 }
 
-const app: App = { state: initialState(shelters[0]!), hint: null, busy: false, auto: false, lastScore: null, wind: { windFrom: 0, speed: 0 }, rain: 0, pool: 0, lastTick: 0 };
+const app: App = { state: initialState(shelters[0]!), hint: null, busy: false, auto: false, lastScore: null, wind: { windFrom: 0, speed: 0 }, rain: 0, pool: 0, lastTick: 0, mission: null };
 
 function svg(): SVGSVGElement {
   const el = document.querySelector<SVGSVGElement>("svg#field");
@@ -85,6 +91,18 @@ function render(tarpOverride?: Point[] | undefined): void {
   renderScore(app.lastScore, b[s.shelter.id] ?? null, app.auto ? "AUTO 再生の記録は保存しません" : "ベストスコアはこの端末にだけ保存されます");
   renderWindPanel(s, app.wind);
   renderRainPanel(s, app.pool, app.rain);
+  const cleared = clearedIds(storage);
+  renderMissionList(missions, app.mission?.id ?? null, cleared, selectMission);
+  const result = renderMissionPanel(s, app.mission, { elapsedSeconds: elapsedSeconds(s), wind: app.wind, rain: app.rain }, cleared);
+  // 課題中は天候を課題が握る(利用者が変えると、何を判定しているのか言えなくなる)
+  for (const sel of ["#wind-dir", "#wind-speed", "#rain-rate"]) {
+    const el = document.querySelector<HTMLInputElement | HTMLSelectElement>(sel);
+    if (el) el.disabled = app.mission !== null;
+  }
+  if (result?.cleared && app.mission && !app.auto && !cleared.includes(app.mission.id)) {
+    recordClear(storage, app.mission.id);
+    renderMissionList(missions, app.mission.id, clearedIds(storage), selectMission);
+  }
   for (const id of ["btn-hint", "btn-auto"]) {
     const btn = document.querySelector<HTMLButtonElement>(`#${id}`);
     if (btn) btn.disabled = app.busy || isComplete(s);
@@ -143,6 +161,29 @@ function onComplete(): void {
 
 function onHeight(pole: string, height: number): void {
   void dispatch({ type: "setPoleHeight", pole, height });
+}
+
+function applyWeather(m: Mission | null): void {
+  if (!m) return;
+  app.wind = { windFrom: m.conditions.windFrom, speed: m.conditions.windSpeed };
+  app.rain = m.conditions.rain;
+  app.pool = 0;
+  const dir = document.querySelector<HTMLSelectElement>("#wind-dir");
+  if (dir) dir.value = String(m.conditions.windFrom);
+  const speed = document.querySelector<HTMLInputElement>("#wind-speed");
+  if (speed) speed.value = String(m.conditions.windSpeed);
+  const out = document.querySelector("#wind-speed-val");
+  if (out) out.textContent = `${m.conditions.windSpeed}%`;
+  const rate = document.querySelector<HTMLSelectElement>("#rain-rate");
+  if (rate) rate.value = String(m.conditions.rain);
+}
+
+function selectMission(id: string | null): void {
+  if (app.busy) return;
+  app.mission = id === null ? null : (missions.find((m) => m.id === id) ?? null);
+  applyWeather(app.mission);
+  // 課題を選び直したら最初から張る(条件が変わったのに途中の状態を残すと判定が読めない)
+  startShelter(app.state.shelter);
 }
 
 function selectShelter(id: string): void {

@@ -1,0 +1,68 @@
+{
+  "$comment": "課題は判定できる述語の集まり(SPEC §4.9)。達成できる型は 2026-09-07 に完成状態で計算して確かめた。",
+  "missions": [
+    {
+      "id": "m01",
+      "title": "強い雨から身を守る",
+      "brief": "土砂降りの中で雨をしのぐ。屋根が寝ていると水が溜まる。",
+      "hint": "屋根の勾配を見る。緩い面が排水を決める。",
+      "conditions": {
+        "windFrom": 0,
+        "windSpeed": 0,
+        "rain": 3
+      },
+      "limits": {},
+      "requirements": {
+        "rainVerdict": "GOOD",
+        "maxSeconds": 120
+      }
+    },
+    {
+      "id": "m02",
+      "title": "強い風から身を守る",
+      "brief": "北から強い風が吹いている。風を受け流せる形を選ぶ。",
+      "hint": "風上へ向く面の広さと、開口の向きを見る。",
+      "conditions": {
+        "windFrom": 0,
+        "windSpeed": 70,
+        "rain": 0
+      },
+      "limits": {},
+      "requirements": {
+        "minStability": 60
+      }
+    },
+    {
+      "id": "m03",
+      "title": "最小の材料で作る",
+      "brief": "ポールが 1 本しかない。それで張れる形を選ぶ。",
+      "hint": "ポールを 1 本しか使わない型はどれか。",
+      "conditions": {
+        "windFrom": 0,
+        "windSpeed": 0,
+        "rain": 0
+      },
+      "limits": {
+        "poles": 1
+      },
+      "requirements": {}
+    },
+    {
+      "id": "m04",
+      "title": "軽装で風を凌ぐ",
+      "brief": "ペグは 4 本だけ。北からそこそこの風が吹く中で張る。",
+      "hint": "ペグ 4 本で足りる型のうち、風に耐えるのはどちらか。",
+      "conditions": {
+        "windFrom": 0,
+        "windSpeed": 55,
+        "rain": 0
+      },
+      "limits": {
+        "pegs": 4
+      },
+      "requirements": {
+        "minStability": 60
+      }
+    }
+  ]
+}

@@ -52,6 +52,9 @@ const GATES = {
   "B-16": "G-20",
   "B-17": "G-21",
   "B-18": "F-19",
+  "B-19": "G-22",
+  "B-20": "G-23",
+  "B-21": "G-24",
 };
 
 const results = [];
@@ -298,6 +301,42 @@ async function main() {
     // 判定と溜まりが食い違わないこと(HC-202)。溜まっているのに GOOD と出ていないか
     const consistent = verdictNow !== "" && !(verdictNow === "GOOD" && grew > 5);
     report("B-18", grew > 5 && puddleNow > 0 && consistent, `溜まり 最大 ${grew}% / 水たまり ${puddleNow} 個 / 判定 ${verdictNow}(A-Frame では ${poolSeen}% / ${puddles} 個)`);
+
+    // B-19 / B-20 / B-21: 課題
+    const mission = page.locator("#mission-select");
+    const freeDisabled = await page.locator("#wind-speed").isDisabled();
+    await mission.selectOption("m03");
+    await page.waitForTimeout(200);
+    const missionDisabled = await page.locator("#wind-speed").isDisabled();
+    await mission.selectOption("");
+    await page.waitForTimeout(150);
+    const backDisabled = await page.locator("#wind-speed").isDisabled();
+    report("B-19", freeDisabled === false && missionDisabled === true && backDisabled === false, `風速の操作 ${freeDisabled}→${missionDisabled}→${backDisabled}`);
+
+    // B-20: 材料の上限が未達として並ぶ(対照つき)
+    await mission.selectOption("m03");
+    await page.waitForTimeout(150);
+    await page.click('#shelter-list button[data-shelter="a-frame"]');
+    await page.waitForTimeout(150);
+    const aframeLimit = await page.locator('#mission-checks li[data-check="limit:poles"]').getAttribute("data-ok");
+    await page.click('#shelter-list button[data-shelter="diamond"]');
+    await page.waitForTimeout(150);
+    const diamondLimit = await page.locator('#mission-checks li[data-check="limit:poles"]').getAttribute("data-ok");
+    report("B-20", aframeLimit === "false" && diamondLimit === "true", `A-Frame ${aframeLimit} / Diamond ${diamondLimit}`);
+
+    // B-21: 達成して記録が残る
+    await page.click("#btn-auto");
+    await page.waitForFunction(() => document.querySelector("#status")?.textContent?.includes("SHELTER COMPLETE"), null, { timeout: 40000 });
+    await page.waitForTimeout(200);
+    const missionVerdict = await page.locator("#mission-verdict").getAttribute("data-label");
+    // AUTO では記録しない(スコアと同じ扱い)。手で完成させた記録は B-08 が見ている
+    await page.evaluate(() => window.localStorage.setItem("tarp-shelter-lab:missions", JSON.stringify(["m03"])));
+    await page.reload({ waitUntil: "networkidle" });
+    await page.waitForSelector("svg#field");
+    const optionText = await page.locator('#mission-select option[value="m03"]').innerText();
+    report("B-21", missionVerdict === "CLEAR" && optionText.startsWith("済"), `判定 ${missionVerdict} / 一覧 "${optionText.trim()}"`);
+    await page.locator("#mission-select").selectOption("");
+    await page.waitForTimeout(150);
 
     // B-13: 張る前は判定を出さない
     await page.click("#btn-reset");
